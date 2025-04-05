@@ -14,8 +14,25 @@
 
 # Uncomment this to preserve the line number information for
 # debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+-keepattributes SourceFile,LineNumberTable
 
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+-keep class com.hchen.superlyric.InitHook
+-keep class com.hchen.superlyric.hook.**
+-keep class com.hchen.superlyric.hook.**$*
+-keep class  com.hchen.hooktool.HCState {
+        static boolean isEnabled;
+        static java.lang.String mFramework;
+        static int  mVersion;
+ }
+-keep class * implements android.os.Parcelable {
+        public static ** CREATOR;
+}
+
+-keep class com.hchen.superlyricapi.ISuperLyric {*;}
+-keep class com.hchen.superlyricapi.ISuperLyricDistributor {*;}
+-keep class com.hchen.superlyricapi.SuperLyricData {*;}
+-keep class * extends com.hchen.superlyricapi.SuperLyricExtra {*;}

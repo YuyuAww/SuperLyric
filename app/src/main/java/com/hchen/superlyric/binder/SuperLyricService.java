@@ -1,0 +1,49 @@
+package com.hchen.superlyric.binder;
+
+import android.os.RemoteException;
+
+import com.hchen.hooktool.log.AndroidLog;
+import com.hchen.superlyricapi.ISuperLyric;
+import com.hchen.superlyricapi.ISuperLyricDistributor;
+import com.hchen.superlyricapi.SuperLyricData;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+public class SuperLyricService extends ISuperLyricDistributor.Stub {
+    private static final String TAG = "SuperLyric";
+    private static final List<ISuperLyric> mISuperLyricList = new ArrayList<>();
+
+    public void addSuperLyricBinder(ISuperLyric iSuperLyric) {
+        mISuperLyricList.add(iSuperLyric);
+    }
+
+    @Override
+    public void onStop() throws RemoteException {
+        Iterator<ISuperLyric> iterator = mISuperLyricList.iterator();
+        while (iterator.hasNext()) {
+            ISuperLyric superLyric = iterator.next();
+            try {
+                superLyric.onStop();
+            } catch (RemoteException e) {
+                iterator.remove();
+                AndroidLog.logW(TAG, "[onStop]: Will remove: " + superLyric, e);
+            }
+        }
+    }
+
+    @Override
+    public void onSuperLyric(SuperLyricData data) throws RemoteException {
+        Iterator<ISuperLyric> iterator = mISuperLyricList.iterator();
+        while (iterator.hasNext()) {
+            ISuperLyric superLyric = iterator.next();
+            try {
+                superLyric.onSuperLyric(data);
+            } catch (RemoteException e) {
+                iterator.remove();
+                AndroidLog.logW(TAG, "[onSuperLyric]: Will remove: " + superLyric, e);
+            }
+        }
+    }
+}

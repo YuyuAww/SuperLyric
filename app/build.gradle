@@ -27,10 +27,16 @@ android {
         sourceCompatibility JavaVersion.VERSION_21
         targetCompatibility JavaVersion.VERSION_21
     }
+
+    buildFeatures {
+        buildConfig true
+        aidl true
+    }
 }
 
 dependencies {
     compileOnly libs.api
     implementation libs.annotation
     implementation libs.hooktool
+    implementation libs.superlyricapi
 }
