@@ -23,7 +23,7 @@ import android.os.Parcel;
 import androidx.annotation.Nullable;
 
 import com.hchen.hooktool.hook.IHook;
-import com.hchen.superlyric.hook.base.BaseLyric;
+import com.hchen.superlyric.base.BaseLyric;
 import com.hchen.superlyricapi.SuperLyricData;
 
 public class Api extends BaseLyric {

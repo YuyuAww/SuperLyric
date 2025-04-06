@@ -20,7 +20,7 @@ package com.hchen.superlyric.hook.music;
 
 import com.hchen.collect.Collect;
 import com.hchen.hooktool.hook.IHook;
-import com.hchen.superlyric.hook.base.BaseLyric;
+import com.hchen.superlyric.base.BaseLyric;
 
 import java.util.Objects;
 

@@ -2,7 +2,7 @@
 agp = "8.9.1"
 annotation = "1.9.1"
 api = "82"
-hooktool = "v.1.2.8"
+hooktool = "v.1.2.9"
 superlyricapi = "0.6"
 
 [libraries]

@@ -27,8 +27,9 @@ import com.hchen.superlyric.base.BaseLyric;
 
 import java.util.Objects;
 
-@Collect(targetPackage = "com.kugou.android", onApplication = true)
-public class KuGou extends BaseLyric {
+@Collect(targetPackage = "com.kugou.android.lite", onApplication = true)
+public class KuGouLite extends BaseLyric {
+
     @Override
     protected void init() {
         onTinker();
@@ -41,29 +42,18 @@ public class KuGou extends BaseLyric {
 
         try {
             long code = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).getLongVersionCode();
-            if (Objects.equals(lpparam.processName, "com.kugou.android.support")) {
-                if (code <= 1000)
-                    hookCarLyric();
-                return;
-            }
-
-            if (code <= 10000)
+            if (!Objects.equals(lpparam.processName, "com.kugou.android.lite.support")) {
+                if (code <= 10935) {
+                    hookLocalBroadcast("android.support.v4.content.LocalBroadcastManager");
+                } else {
+                    hookLocalBroadcast("androidx.localbroadcastmanager.content.LocalBroadcastManager");
+                }
                 MockFlyme.mock();
-            else if (code <= 12009) {
-                MockFlyme.mock();
-                hookLocalBroadcast("android.support.v4.content.LocalBroadcastManager");
-            } else {
-                MockFlyme.mock();
-                hookLocalBroadcast("androidx.localbroadcastmanager.content.LocalBroadcastManager");
                 fixProbabilityCollapse();
             }
         } catch (Throwable e) {
             logE(TAG, e);
         }
-    }
-
-    private void hookCarLyric() {
-        // TODO
     }
 
     private void hookLocalBroadcast(String clazz) {

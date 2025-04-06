@@ -3,5 +3,7 @@
     <string-array name="hooks">
         <item>android</item>
         <item>com.miui.player</item>
+        <item>com.kugou.android</item>
+        <item>com.kugou.android.lite</item>
     </string-array>
 </resources>

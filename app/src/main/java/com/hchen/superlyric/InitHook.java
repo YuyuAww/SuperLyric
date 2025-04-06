@@ -43,20 +43,26 @@ public class InitHook extends HCEntrance {
         return basicData.setTag(TAG)
             .setLogLevel(LOG_D)
             .setModulePackageName(BuildConfig.APPLICATION_ID)
-            .initLogExpand(new String[]{
+            .setLogExpandPath(new String[]{
                 "com.hchen.superlyric.hook"
             });
     }
 
     @Override
     public String[] ignorePackageNameList() {
-        return new String[]{"com.miui.contentcatcher", "com.android.providers.settings", "com.android.server.telecom"};
+        return new String[]{
+            "com.miui.contentcatcher",
+            "com.android.providers.settings",
+            "com.android.server.telecom",
+            "com.google.android.webview"
+        };
     }
 
     @Override
     public void onLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
         mCacheBaseHCMap.clear();
         if (!CollectMap.getAllPackageSet().contains(lpparam.packageName)) {
+            HCInit.initLoadPackageParam(lpparam);
             new Api().onApplicationCreate().onLoadPackage();
             return;
         }
@@ -65,6 +71,7 @@ public class InitHook extends HCEntrance {
             @Override
             public void accept(String fullClass) {
                 try {
+                    HCInit.initLoadPackageParam(lpparam);
                     Class<?> clazz = getClass().getClassLoader().loadClass(fullClass);
                     BaseHC baseHC = (BaseHC) clazz.getDeclaredConstructor().newInstance();
                     baseHC.onApplicationCreate();
@@ -84,6 +91,7 @@ public class InitHook extends HCEntrance {
                         assert baseHC != null;
                         baseHC.onLoadPackage();
                     } else {
+                        HCInit.initLoadPackageParam(lpparam);
                         Class<?> clazz = getClass().getClassLoader().loadClass(fullClass);
                         BaseHC baseHC = (BaseHC) clazz.getDeclaredConstructor().newInstance();
                         baseHC.onLoadPackage();
