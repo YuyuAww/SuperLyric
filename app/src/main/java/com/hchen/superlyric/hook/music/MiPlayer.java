@@ -18,36 +18,14 @@
  */
 package com.hchen.superlyric.hook.music;
 
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.Bundle;
-import android.os.RemoteException;
-
-import com.hchen.hooktool.BaseHC;
+import com.hchen.collect.Collect;
 import com.hchen.hooktool.hook.IHook;
-import com.hchen.superlyricapi.ISuperLyricDistributor;
-import com.hchen.superlyricapi.SuperLyricData;
+import com.hchen.superlyric.hook.base.BaseLyric;
 
 import java.util.Objects;
 
-public class MiPlayer extends BaseHC {
-    private Context mContext;
-    private ISuperLyricDistributor mISuperLyricDistributor;
-
-    @Override
-    protected void onApplicationAfter(Context context) {
-        this.mContext = context;
-        Intent intent = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-        if (intent == null) return;
-        Bundle bundle = intent.getBundleExtra("super_lyric_info");
-        if (bundle == null) return;
-        mISuperLyricDistributor = ISuperLyricDistributor.Stub.asInterface(
-            bundle.getBinder("super_lyric_binder")
-        );
-        logD(TAG, "Success get binder: " + mISuperLyricDistributor);
-    }
-
+@Collect(targetPackage = "com.miui.player", onApplication = true)
+public class MiPlayer extends BaseLyric {
     @Override
     protected void init() {
         hookAllMethod("com.tencent.qqmusiccommon.util.music.RemoteLyricController",
@@ -67,23 +45,5 @@ public class MiPlayer extends BaseHC {
                 }
             }
         );
-    }
-
-    private void sendLyric(String lyric) {
-        lyric = lyric.trim();
-        if (lyric.isEmpty()) return;
-        if (mISuperLyricDistributor == null) return;
-        SuperLyricData data = new SuperLyricData();
-        data.lyric = lyric;
-        data.packageName = mContext.getPackageName();
-        data.delay = 0;
-        data.base64Icon = "";
-        try {
-            mISuperLyricDistributor.onSuperLyric(data);
-        } catch (RemoteException e) {
-            logE(TAG, e);
-        }
-
-        logD(TAG, "Lyric: " + lyric);
     }
 }

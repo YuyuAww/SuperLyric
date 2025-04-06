@@ -12,19 +12,19 @@ pluginManagement {
     }
 }
 
-def token = ""
-def infoFile = new File(rootProject.projectDir, "local.properties")
-
-if (token.isEmpty()) {
-    if (infoFile.exists()) {
-        def info = new Properties()
-        infoFile.withInputStream { stream ->
-            info.load(stream)
-        }
-
-        token = info.getProperty("token") ?: ""
-    }
-}
+// def token = ""
+// def infoFile = new File(rootProject.projectDir, "local.properties")
+//
+// if (token.isEmpty()) {
+//     if (infoFile.exists()) {
+//         def info = new Properties()
+//         infoFile.withInputStream { stream ->
+//             info.load(stream)
+//         }
+//
+//         token = info.getProperty("token") ?: ""
+//     }
+// }
 
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
@@ -34,12 +34,13 @@ dependencyResolutionManagement {
         maven { url "https://api.xposed.info/" }
         maven {
             url 'https://jitpack.io'
-            credentials {
-                username = token
-            }
+            // credentials {
+            //     username = token
+            // }
         }
     }
 }
 
 rootProject.name = "SuperLyric"
 include ':app'
+include ':collect'

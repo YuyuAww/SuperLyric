@@ -24,6 +24,8 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.IBinder;
 
+import com.hchen.collect.Collect;
+import com.hchen.collect.CollectMap;
 import com.hchen.hooktool.BaseHC;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.binder.SuperLyricService;
@@ -32,6 +34,7 @@ import com.hchen.superlyricapi.ISuperLyric;
 
 import java.util.Objects;
 
+@Collect(targetPackage = "android")
 public class SuperLyricProxy extends BaseHC {
     private static SuperLyricService mSuperLyricService;
 
@@ -70,7 +73,9 @@ public class SuperLyricProxy extends BaseHC {
                     if (intent == null) return;
 
                     String callerPackage = (String) getArgs(1);
-                    if (!Objects.equals(callerPackage, "com.miui.player")) return;
+                    if (!CollectMap.getAllPackageSet().contains(callerPackage)
+                        && !SuperLyricService.mExemptSet.contains(callerPackage)
+                    ) return;
 
                     Bundle bundle = new Bundle();
                     bundle.putBinder("super_lyric_binder", mSuperLyricService);

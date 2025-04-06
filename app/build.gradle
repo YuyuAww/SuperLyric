@@ -35,8 +35,18 @@ android {
 }
 
 dependencies {
+    configurations.configureEach {
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+        resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
+    }
+
     compileOnly libs.api
     implementation libs.annotation
     implementation libs.hooktool
-    implementation libs.superlyricapi
+    implementation(libs.superlyricapi) {
+        changing = true
+    }
+
+    implementation(project(':collect'))
+    annotationProcessor(project(':collect'))
 }

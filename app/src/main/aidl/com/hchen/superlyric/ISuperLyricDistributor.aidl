@@ -35,4 +35,7 @@ interface ISuperLyricDistributor {
 
     // 当歌曲发生变化时调用
     void onSuperLyric(in SuperLyricData data);
+
+    // 允许豁免的应用
+    void onExempt(String packageName);
 }

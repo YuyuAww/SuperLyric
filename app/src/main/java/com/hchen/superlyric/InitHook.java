@@ -20,19 +20,27 @@ package com.hchen.superlyric;
 
 import static com.hchen.hooktool.HCInit.LOG_D;
 
+import com.hchen.collect.CollectMap;
+import com.hchen.hooktool.BaseHC;
 import com.hchen.hooktool.HCEntrance;
 import com.hchen.hooktool.HCInit;
-import com.hchen.superlyric.hook.SuperLyricProxy;
-import com.hchen.superlyric.hook.music.MiPlayer;
+import com.hchen.hooktool.log.XposedLog;
+import com.hchen.superlyric.hook.music.Api;
 
-import java.util.Objects;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.function.Consumer;
 
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 public class InitHook extends HCEntrance {
+    private static final String TAG = "SuperLyric";
+    private static final HashMap<String, BaseHC> mCacheBaseHCMap = new HashMap<>();
+
     @Override
     public HCInit.BasicData initHC(HCInit.BasicData basicData) {
-        return basicData.setTag("SuperLyric")
+        return basicData.setTag(TAG)
             .setLogLevel(LOG_D)
             .setModulePackageName(BuildConfig.APPLICATION_ID)
             .initLogExpand(new String[]{
@@ -47,10 +55,66 @@ public class InitHook extends HCEntrance {
 
     @Override
     public void onLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
-        if (Objects.equals(lpparam.packageName, "android"))
-            new SuperLyricProxy().onLoadPackage();
-        else if (Objects.equals(lpparam.packageName, "com.miui.player")) {
-            new MiPlayer().onApplicationCreate().onLoadPackage();
+        mCacheBaseHCMap.clear();
+        if (!CollectMap.getAllPackageSet().contains(lpparam.packageName)) {
+            new Api().onApplicationCreate().onLoadPackage();
+            return;
         }
+
+        CollectMap.getOnLoadPackageList(lpparam.packageName).forEach(new Consumer<String>() {
+            @Override
+            public void accept(String fullClass) {
+                try {
+                    Class<?> clazz = getClass().getClassLoader().loadClass(fullClass);
+                    BaseHC baseHC = (BaseHC) clazz.getDeclaredConstructor().newInstance();
+                    baseHC.onApplicationCreate();
+                    mCacheBaseHCMap.put(fullClass, baseHC);
+                } catch (Throwable ex) {
+                    XposedLog.logE(TAG, "Failed to load class: " + fullClass, ex);
+                }
+            }
+        });
+
+        CollectMap.getOnLoadPackageList(lpparam.packageName).forEach(new Consumer<String>() {
+            @Override
+            public void accept(String fullClass) {
+                try {
+                    if (mCacheBaseHCMap.get(fullClass) != null) {
+                        BaseHC baseHC = mCacheBaseHCMap.get(fullClass);
+                        assert baseHC != null;
+                        baseHC.onLoadPackage();
+                    } else {
+                        Class<?> clazz = getClass().getClassLoader().loadClass(fullClass);
+                        BaseHC baseHC = (BaseHC) clazz.getDeclaredConstructor().newInstance();
+                        baseHC.onLoadPackage();
+                    }
+                } catch (Throwable ex) {
+                    XposedLog.logE(TAG, "Failed to load class: " + fullClass, ex);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onInitZygote(StartupParam startupParam) throws Throwable {
+        CollectMap.getOnZygoteList().values().forEach(new Consumer<List<String>>() {
+            @Override
+            public void accept(List<String> fullClassList) {
+                fullClassList.forEach(new Consumer<String>() {
+                    @Override
+                    public void accept(String fullClass) {
+                        try {
+                            Class<?> hookClass = getClass().getClassLoader().loadClass(fullClass);
+                            BaseHC baseHC = (BaseHC) hookClass.getDeclaredConstructor().newInstance();
+                            baseHC.onZygote();
+                        } catch (ClassNotFoundException | NoSuchMethodException |
+                                 IllegalAccessException | InstantiationException |
+                                 InvocationTargetException e) {
+                            XposedLog.logE(TAG, "Failed to load class: " + fullClass, e);
+                        }
+                    }
+                });
+            }
+        });
     }
 }

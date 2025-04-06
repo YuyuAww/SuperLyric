@@ -26,12 +26,14 @@ import com.hchen.superlyricapi.ISuperLyricDistributor;
 import com.hchen.superlyricapi.SuperLyricData;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
 public class SuperLyricService extends ISuperLyricDistributor.Stub {
     private static final String TAG = "SuperLyric";
     private static final List<ISuperLyric> mISuperLyricList = new ArrayList<>();
+    public static final HashSet<String> mExemptSet = new HashSet<>();
 
     public void addSuperLyricBinder(ISuperLyric iSuperLyric) {
         mISuperLyricList.add(iSuperLyric);
@@ -63,5 +65,10 @@ public class SuperLyricService extends ISuperLyricDistributor.Stub {
                 AndroidLog.logW(TAG, "[onSuperLyric]: Will remove: " + superLyric, e);
             }
         }
+    }
+
+    @Override
+    public void onExempt(String packageName) throws RemoteException {
+        mExemptSet.add(packageName);
     }
 }
