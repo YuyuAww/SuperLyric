@@ -96,6 +96,7 @@ public class PlayStateListener {
                             mISuperLyricDistributor.onStop(
                                 new SuperLyricData()
                                     .setPackageName(mController.getPackageName())
+                                    .setPlaybackState(state)
                             );
                         } catch (RemoteException ignore) {
                         }

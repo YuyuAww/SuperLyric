@@ -105,14 +105,14 @@ public abstract class BaseLyric extends BaseHC {
 
     public void sendLyric(String lyric) {
         if (lyric == null) return;
-
-        lyric = lyric.trim();
-        if (Objects.equals(lyric, lastLyric)) return;
-        lastLyric = lyric;
-        if (lyric.isEmpty()) return;
         if (mISuperLyricDistributor == null) return;
 
         try {
+            lyric = lyric.trim();
+            if (Objects.equals(lyric, lastLyric)) return;
+            if (lyric.isEmpty()) return;
+            lastLyric = lyric;
+
             mISuperLyricDistributor.onSuperLyric(new SuperLyricData()
                 .setPackageName(mContext.getPackageName())
                 .setLyric(lyric)
@@ -126,6 +126,7 @@ public abstract class BaseLyric extends BaseHC {
 
     public void sendStop(SuperLyricData data) {
         if (mISuperLyricDistributor == null) return;
+
         try {
             mISuperLyricDistributor.onStop(data);
         } catch (RemoteException e) {
@@ -137,6 +138,7 @@ public abstract class BaseLyric extends BaseHC {
 
     public void sendSuperLyricData(SuperLyricData data) {
         if (mISuperLyricDistributor == null) return;
+
         try {
             mISuperLyricDistributor.onSuperLyric(data);
         } catch (RemoteException e) {
