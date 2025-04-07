@@ -14,5 +14,5 @@ public @interface Collect {
 
     boolean onZygote() default false;
 
-    boolean onApplication() default false;
+    boolean onApplication() default true;
 }

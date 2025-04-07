@@ -26,6 +26,7 @@ import com.hchen.hooktool.HCEntrance;
 import com.hchen.hooktool.HCInit;
 import com.hchen.hooktool.log.XposedLog;
 import com.hchen.superlyric.hook.music.Api;
+import com.hchen.superlyric.utils.DexKitUtils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
@@ -67,40 +68,47 @@ public class InitHook extends HCEntrance {
             return;
         }
 
-        CollectMap.getOnLoadPackageList(lpparam.packageName).forEach(new Consumer<String>() {
-            @Override
-            public void accept(String fullClass) {
-                try {
-                    HCInit.initLoadPackageParam(lpparam);
-                    Class<?> clazz = getClass().getClassLoader().loadClass(fullClass);
-                    BaseHC baseHC = (BaseHC) clazz.getDeclaredConstructor().newInstance();
-                    baseHC.onApplicationCreate();
-                    mCacheBaseHCMap.put(fullClass, baseHC);
-                } catch (Throwable ex) {
-                    XposedLog.logE(TAG, "Failed to load class: " + fullClass, ex);
-                }
-            }
-        });
-
-        CollectMap.getOnLoadPackageList(lpparam.packageName).forEach(new Consumer<String>() {
-            @Override
-            public void accept(String fullClass) {
-                try {
-                    if (mCacheBaseHCMap.get(fullClass) != null) {
-                        BaseHC baseHC = mCacheBaseHCMap.get(fullClass);
-                        assert baseHC != null;
-                        baseHC.onLoadPackage();
-                    } else {
+        try {
+            DexKitUtils.init(lpparam, TAG);
+            CollectMap.getOnLoadPackageList(lpparam.packageName).forEach(new Consumer<String>() {
+                @Override
+                public void accept(String fullClass) {
+                    try {
                         HCInit.initLoadPackageParam(lpparam);
                         Class<?> clazz = getClass().getClassLoader().loadClass(fullClass);
                         BaseHC baseHC = (BaseHC) clazz.getDeclaredConstructor().newInstance();
-                        baseHC.onLoadPackage();
+                        baseHC.onApplicationCreate();
+                        mCacheBaseHCMap.put(fullClass, baseHC);
+                    } catch (Throwable ex) {
+                        XposedLog.logE(TAG, "Failed to load class: " + fullClass, ex);
                     }
-                } catch (Throwable ex) {
-                    XposedLog.logE(TAG, "Failed to load class: " + fullClass, ex);
                 }
-            }
-        });
+            });
+
+            CollectMap.getOnLoadPackageList(lpparam.packageName).forEach(new Consumer<String>() {
+                @Override
+                public void accept(String fullClass) {
+                    try {
+                        if (mCacheBaseHCMap.get(fullClass) != null) {
+                            BaseHC baseHC = mCacheBaseHCMap.get(fullClass);
+                            assert baseHC != null;
+                            baseHC.onLoadPackage();
+                        } else {
+                            HCInit.initLoadPackageParam(lpparam);
+                            Class<?> clazz = getClass().getClassLoader().loadClass(fullClass);
+                            BaseHC baseHC = (BaseHC) clazz.getDeclaredConstructor().newInstance();
+                            baseHC.onLoadPackage();
+                        }
+                    } catch (Throwable ex) {
+                        XposedLog.logE(TAG, "Failed to load class: " + fullClass, ex);
+                    }
+                }
+            });
+        } catch (Throwable e) {
+            XposedLog.logE(TAG, "Error: ", e);
+        } finally {
+            DexKitUtils.close();
+        }
     }
 
     @Override

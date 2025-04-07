@@ -25,15 +25,14 @@ import com.hchen.superlyricapi.ISuperLyric;
 import com.hchen.superlyricapi.ISuperLyricDistributor;
 import com.hchen.superlyricapi.SuperLyricData;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Vector;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 public class SuperLyricService extends ISuperLyricDistributor.Stub {
     private static final String TAG = "SuperLyric";
-    private static final List<ISuperLyric> mISuperLyricList = new ArrayList<>();
-    public static final HashSet<String> mExemptSet = new HashSet<>();
+    private static final Vector<ISuperLyric> mISuperLyricList = new Vector<>();
+    public static final CopyOnWriteArraySet<String> mExemptSet = new CopyOnWriteArraySet<>();
 
     public void addSuperLyricBinder(ISuperLyric iSuperLyric) {
         mISuperLyricList.add(iSuperLyric);
@@ -47,7 +46,10 @@ public class SuperLyricService extends ISuperLyricDistributor.Stub {
             try {
                 superLyric.onStop();
             } catch (RemoteException e) {
-                iterator.remove();
+                try {
+                    iterator.remove();
+                } catch (Throwable ignore) {
+                }
                 AndroidLog.logW(TAG, "[onStop]: Will remove: " + superLyric, e);
             }
         }
@@ -61,7 +63,10 @@ public class SuperLyricService extends ISuperLyricDistributor.Stub {
             try {
                 superLyric.onSuperLyric(data);
             } catch (RemoteException e) {
-                iterator.remove();
+                try {
+                    iterator.remove();
+                } catch (Throwable ignore) {
+                }
                 AndroidLog.logW(TAG, "[onSuperLyric]: Will remove: " + superLyric, e);
             }
         }

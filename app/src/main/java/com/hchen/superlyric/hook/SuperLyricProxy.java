@@ -34,7 +34,7 @@ import com.hchen.superlyricapi.ISuperLyric;
 
 import java.util.Objects;
 
-@Collect(targetPackage = "android")
+@Collect(targetPackage = "android", onApplication = false)
 public class SuperLyricProxy extends BaseHC {
     private static SuperLyricService mSuperLyricService;
 

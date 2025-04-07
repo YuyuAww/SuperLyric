@@ -24,17 +24,18 @@ import com.hchen.superlyric.base.BaseLyric;
 
 import java.util.Objects;
 
-@Collect(targetPackage = "com.miui.player", onApplication = true)
+@Collect(targetPackage = "com.miui.player")
 public class MiPlayer extends BaseLyric {
     @Override
     protected void init() {
-        hookAllMethod("com.tencent.qqmusiccommon.util.music.RemoteLyricController",
+        hookMethod("com.tencent.qqmusiccommon.util.music.RemoteLyricController",
             "BluetoothA2DPConnected",
             returnResult(true)
         );
 
-        hookAllMethod("com.tencent.qqmusiccommon.util.music.RemoteControlManager",
+        hookMethod("com.tencent.qqmusiccommon.util.music.RemoteControlManager",
             "updataMetaData",
+            "com.tencent.qqmusic.core.song.SongInfo", String.class,
             new IHook() {
                 @Override
                 public void before() {

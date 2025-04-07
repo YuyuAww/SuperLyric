@@ -24,16 +24,24 @@ import android.content.Intent;
 import com.hchen.collect.Collect;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.base.BaseLyric;
+import com.hchen.superlyric.utils.DexKitUtils;
+
+import org.luckypray.dexkit.query.FindMethod;
+import org.luckypray.dexkit.query.matchers.ClassMatcher;
+import org.luckypray.dexkit.query.matchers.MethodMatcher;
+import org.luckypray.dexkit.result.MethodData;
 
 import java.util.Objects;
 
-@Collect(targetPackage = "com.kugou.android.lite", onApplication = true)
+import kotlin.jvm.functions.Function0;
+
+@Collect(targetPackage = "com.kugou.android.lite")
 public class KuGouLite extends BaseLyric {
 
     @Override
     protected void init() {
         onTinker();
-        openBluetoothA2dp();
+        // openBluetoothA2dp();
     }
 
     @Override
@@ -43,12 +51,14 @@ public class KuGouLite extends BaseLyric {
         try {
             long code = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).getLongVersionCode();
             if (!Objects.equals(lpparam.processName, "com.kugou.android.lite.support")) {
-                if (code <= 10935) {
+                if (!enableStatusBarLyric()) return;
+
+                if (code <= 10935)
                     hookLocalBroadcast("android.support.v4.content.LocalBroadcastManager");
-                } else {
+                else
                     hookLocalBroadcast("androidx.localbroadcastmanager.content.LocalBroadcastManager");
-                }
-                MockFlyme.mock();
+
+                // MockFlyme.mock();
                 fixProbabilityCollapse();
             }
         } catch (Throwable e) {
@@ -56,9 +66,34 @@ public class KuGouLite extends BaseLyric {
         }
     }
 
+    private boolean enableStatusBarLyric() {
+        MethodData methodData = DexKitUtils.getDexKitBridge().findMethod(FindMethod.create()
+            .matcher(MethodMatcher.create()
+                .declaredClass(ClassMatcher.create()
+                    .usingStrings("key_status_bar_lyric_open")
+                )
+                .usingStrings("key_status_bar_lyric_open")
+                .returnType(boolean.class)
+            )
+        ).singleOrThrow(new Function0<Throwable>() {
+            @Override
+            public Throwable invoke() {
+                return new RuntimeException("Failed to enable status bar lyric!!");
+            }
+        });
+        try {
+            hook(methodData.getMethodInstance(classLoader), returnResult(true));
+        } catch (NoSuchMethodException e) {
+            logE(TAG, "Failed to hook status bar lyric!!", e);
+            return false;
+        }
+        return true;
+    }
+
     private void hookLocalBroadcast(String clazz) {
-        hookAllMethod(clazz,
+        hookMethod(clazz,
             "sendBroadcast",
+            Intent.class,
             new IHook() {
                 @Override
                 public void before() {
@@ -78,8 +113,9 @@ public class KuGouLite extends BaseLyric {
     }
 
     private void fixProbabilityCollapse() {
-        hookAllMethod("com.kugou.framework.hack.ServiceFetcherHacker$FetcherImpl",
+        hookMethod("com.kugou.framework.hack.ServiceFetcherHacker$FetcherImpl",
             "createServiceObject",
+            Context.class, Context.class,
             new IHook() {
                 @Override
                 public void after() {

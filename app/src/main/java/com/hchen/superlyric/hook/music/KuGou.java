@@ -24,15 +24,23 @@ import android.content.Intent;
 import com.hchen.collect.Collect;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.base.BaseLyric;
+import com.hchen.superlyric.utils.DexKitUtils;
+
+import org.luckypray.dexkit.query.FindMethod;
+import org.luckypray.dexkit.query.matchers.ClassMatcher;
+import org.luckypray.dexkit.query.matchers.MethodMatcher;
+import org.luckypray.dexkit.result.MethodData;
 
 import java.util.Objects;
 
-@Collect(targetPackage = "com.kugou.android", onApplication = true)
+import kotlin.jvm.functions.Function0;
+
+@Collect(targetPackage = "com.kugou.android")
 public class KuGou extends BaseLyric {
     @Override
     protected void init() {
         onTinker();
-        openBluetoothA2dp();
+        // openBluetoothA2dp();
     }
 
     @Override
@@ -42,18 +50,20 @@ public class KuGou extends BaseLyric {
         try {
             long code = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).getLongVersionCode();
             if (Objects.equals(lpparam.processName, "com.kugou.android.support")) {
-                if (code <= 1000)
-                    hookCarLyric();
+                // if (code <= 10000) // 找不到这么低的版本了
+                //     hookCarLyric();
                 return;
             }
 
-            if (code <= 10000)
-                MockFlyme.mock();
-            else if (code <= 12009) {
-                MockFlyme.mock();
+            if (!enableStatusBarLyric()) return;
+
+            // if (code <= 10000)
+            //     MockFlyme.mock();
+            if (code <= 12009) {
+                // MockFlyme.mock();
                 hookLocalBroadcast("android.support.v4.content.LocalBroadcastManager");
             } else {
-                MockFlyme.mock();
+                // MockFlyme.mock();
                 hookLocalBroadcast("androidx.localbroadcastmanager.content.LocalBroadcastManager");
                 fixProbabilityCollapse();
             }
@@ -62,13 +72,39 @@ public class KuGou extends BaseLyric {
         }
     }
 
+    @Deprecated
     private void hookCarLyric() {
         // TODO
     }
 
+    private boolean enableStatusBarLyric() {
+        MethodData methodData = DexKitUtils.getDexKitBridge().findMethod(FindMethod.create()
+            .matcher(MethodMatcher.create()
+                .declaredClass(ClassMatcher.create()
+                    .usingStrings("key_status_bar_lyric_open")
+                )
+                .usingStrings("key_status_bar_lyric_open")
+                .returnType(boolean.class)
+            )
+        ).singleOrThrow(new Function0<Throwable>() {
+            @Override
+            public Throwable invoke() {
+                return new RuntimeException("Failed to enable status bar lyric!!");
+            }
+        });
+        try {
+            hook(methodData.getMethodInstance(classLoader), returnResult(true));
+        } catch (NoSuchMethodException e) {
+            logE(TAG, "Failed to hook status bar lyric!!", e);
+            return false;
+        }
+        return true;
+    }
+
     private void hookLocalBroadcast(String clazz) {
-        hookAllMethod(clazz,
+        hookMethod(clazz,
             "sendBroadcast",
+            Intent.class,
             new IHook() {
                 @Override
                 public void before() {
@@ -88,8 +124,9 @@ public class KuGou extends BaseLyric {
     }
 
     private void fixProbabilityCollapse() {
-        hookAllMethod("com.kugou.framework.hack.ServiceFetcherHacker$FetcherImpl",
+        hookMethod("com.kugou.framework.hack.ServiceFetcherHacker$FetcherImpl",
             "createServiceObject",
+            Context.class, Context.class,
             new IHook() {
                 @Override
                 public void after() {

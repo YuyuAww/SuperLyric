@@ -2,12 +2,14 @@
 agp = "8.9.1"
 annotation = "1.9.1"
 api = "82"
+dexkit = "2.0.3"
 hooktool = "v.1.2.9"
 superlyricapi = "0.6"
 
 [libraries]
 annotation = { module = "androidx.annotation:annotation", version.ref = "annotation" }
 api = { module = "de.robv.android.xposed:api", version.ref = "api" }
+dexkit = { module = "org.luckypray:dexkit", version.ref = "dexkit" }
 hooktool = { group = "com.github.HChenX", name = "HookTool", version.ref = "hooktool" }
 superlyricapi = { module = "com.github.HChenX:SuperLyricApi", version.ref = "superlyricapi" }
 

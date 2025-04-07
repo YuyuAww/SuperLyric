@@ -199,12 +199,13 @@ public abstract class BaseLyric extends BaseHC {
         }
 
         public static void notificationLyric(BaseLyric lyric) {
-            hookAllMethod("android.app.NotificationManager",
+            hookMethod("android.app.NotificationManager",
                 "notify",
+                String.class, int.class, Notification.class,
                 new IHook() {
                     @Override
                     public void after() {
-                        Notification notification = (Notification) getArgs(0);
+                        Notification notification = (Notification) getArgs(2);
                         if (notification == null) return;
 
                         boolean isLyric = ((notification.flags & 0x01000000) != 0 || (notification.flags & 0x02000000) != 0);
