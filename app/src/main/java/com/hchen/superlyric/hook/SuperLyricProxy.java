@@ -108,7 +108,20 @@ public class SuperLyricProxy extends BaseHC {
 
                     try {
                         ISuperLyric iSuperLyric = ISuperLyric.Stub.asInterface(superLyricBinder);
-                        addSuperLyricBinder(iSuperLyric);
+                        mSuperLyricService.addSuperLyricBinder(iSuperLyric);
+                        if (bundle.getBoolean("super_lyric_self_control", false)) {
+                            synchronized (thisObject()) {
+                                Object callerApp = callThisMethod("getRecordForAppLOSP", getArgs(0));
+                                String packageName = (String) getField(
+                                    getField(
+                                        callerApp,
+                                        "info"
+                                    ),
+                                    "packageName"
+                                );
+                                mSuperLyricService.addSelfControlPackage(packageName);
+                            }
+                        }
 
                         logD(TAG, "Will add binder: " + iSuperLyric);
                     } catch (Throwable e) {
@@ -117,9 +130,5 @@ public class SuperLyricProxy extends BaseHC {
                 }
             }
         );
-    }
-
-    private void addSuperLyricBinder(ISuperLyric iSuperLyric) {
-        mSuperLyricService.addSuperLyricBinder(iSuperLyric);
     }
 }

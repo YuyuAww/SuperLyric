@@ -33,9 +33,14 @@ public class SuperLyricService extends ISuperLyricDistributor.Stub {
     private static final String TAG = "SuperLyric";
     private static final Vector<ISuperLyric> mISuperLyricList = new Vector<>();
     public static final CopyOnWriteArraySet<String> mExemptSet = new CopyOnWriteArraySet<>();
+    public static final CopyOnWriteArraySet<String> mSelfControlSet = new CopyOnWriteArraySet<>();
 
     public void addSuperLyricBinder(ISuperLyric iSuperLyric) {
         mISuperLyricList.add(iSuperLyric);
+    }
+
+    public void addSelfControlPackage(String packageName) {
+        mSelfControlSet.add(packageName);
     }
 
     @Override

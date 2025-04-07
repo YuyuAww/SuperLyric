@@ -29,17 +29,18 @@ import android.service.notification.NotificationListenerService;
 
 import androidx.annotation.Nullable;
 
+import com.hchen.superlyric.binder.SuperLyricService;
 import com.hchen.superlyricapi.ISuperLyricDistributor;
 import com.hchen.superlyricapi.SuperLyricData;
 
-import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PlayStateListener {
     private final Context mContext;
     private static ISuperLyricDistributor mISuperLyricDistributor;
     private final MediaSessionManager mMediaSessionManager;
-    private final HashMap<MediaController, MediaControllerCallback> mCallbackHashMap = new HashMap<>();
+    private static final ConcurrentHashMap<MediaController, MediaControllerCallback> mCallbackHashMap = new ConcurrentHashMap<>();
     private final MediaSessionManager.OnActiveSessionsChangedListener mListener = controllers -> {
         if (controllers == null) return;
 
@@ -60,6 +61,9 @@ public class PlayStateListener {
     }
 
     private void registerMediaControllerCallback(MediaController controller) {
+        if (SuperLyricService.mSelfControlSet.contains(controller.getPackageName()))
+            return; // 不监听自我控制的应用
+
         if (mCallbackHashMap.get(controller) != null) {
             controller.unregisterCallback(mCallbackHashMap.get(controller));
             mCallbackHashMap.remove(controller);
@@ -81,6 +85,8 @@ public class PlayStateListener {
         public void onPlaybackStateChanged(@Nullable PlaybackState state) {
             super.onPlaybackStateChanged(state);
             if (state == null) return;
+            if (unregisterCallbackIfNeed(mController, this))
+                return;
 
             switch (state.getState()) {
                 case PlaybackState.STATE_BUFFERING, PlaybackState.STATE_PAUSED,
@@ -101,6 +107,8 @@ public class PlayStateListener {
         public void onMetadataChanged(@Nullable MediaMetadata metadata) {
             super.onMetadataChanged(metadata);
             if (metadata == null) return;
+            if (unregisterCallbackIfNeed(mController, this))
+                return;
 
             if (mISuperLyricDistributor != null) {
                 try {
@@ -112,5 +120,16 @@ public class PlayStateListener {
                 }
             }
         }
+    }
+
+    private static boolean unregisterCallbackIfNeed(MediaController controller, MediaController.Callback callback) {
+        if (SuperLyricService.mSelfControlSet.contains(controller.getPackageName())) {
+            if (callback != null) {
+                controller.unregisterCallback(callback);
+                mCallbackHashMap.remove(controller);
+                return true;
+            }
+        }
+        return false;
     }
 }
