@@ -37,7 +37,6 @@ import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyricapi.ISuperLyricDistributor;
 import com.hchen.superlyricapi.SuperLyricData;
 
-import java.util.HashMap;
 import java.util.Objects;
 
 public abstract class BaseLyric extends BaseHC {
@@ -166,39 +165,48 @@ public abstract class BaseLyric extends BaseHC {
     }
 
     public static class MockFlyme {
-        private static final HashMap<String, Integer> flymeFlagMap = new HashMap<>();
+        private static class MeiZuNotification extends Notification {
+            public static final int FLAG_ALWAYS_SHOW_TICKER_HOOK = 0x01000000;
+            public static final int FLAG_ONLY_UPDATE_TICKER_HOOK = 0x02000000;
+            public static final String FLAG_ALWAYS_SHOW_TICKER = "FLAG_ALWAYS_SHOW_TICKER";
+            public static final String FLAG_ONLY_UPDATE_TICKER = "FLAG_ONLY_UPDATE_TICKER";
+        }
 
         public static void mock() {
-            flymeFlagMap.put("FLAG_ALWAYS_SHOW_TICKER", 0x01000000);
-            flymeFlagMap.put("FLAG_ONLY_UPDATE_TICKER", 0x02000000);
+            hookMethod(Class.class, "getField", String.class, createHook());
+            hookMethod(Class.class, "getDeclaredField", String.class, createHook());
 
-            setStaticField(Build.class, "BRAND", "meizu");
-            setStaticField(Build.class, "MANUFACTURER", "Meizu");
-            setStaticField(Build.class, "DEVICE", "m1892");
-            setStaticField(Build.class, "DISPLAY", "Flyme");
-            setStaticField(Build.class, "PRODUCT", "meizu_16thPlus_CN");
-            setStaticField(Build.class, "MODEL", "meizu 16th Plus");
-
-            chain(Class.class, method("getField", String.class)
-                .hook(new IHook() {
+            hookAllMethod("android.os.SystemProperties",
+                "get",
+                new IHook() {
                     @Override
                     public void after() {
-                        String key = (String) getArgs(0);
-                        if (flymeFlagMap.get(key) == null) return;
-                        setResult(flymeFlagMap.get(key));
+                        setStaticField(Build.class, "BRAND", "meizu");
+                        setStaticField(Build.class, "MANUFACTURER", "Meizu");
+                        setStaticField(Build.class, "DEVICE", "m1892");
+                        setStaticField(Build.class, "DISPLAY", "Flyme");
+                        setStaticField(Build.class, "PRODUCT", "meizu_16thPlus_CN");
+                        setStaticField(Build.class, "MODEL", "meizu 16th Plus");
                     }
-                })
-
-                .method("getDeclaredField", String.class)
-                .hook(new IHook() {
-                    @Override
-                    public void after() {
-                        String key = (String) getArgs(0);
-                        if (flymeFlagMap.get(key) == null) return;
-                        setResult(flymeFlagMap.get(key));
-                    }
-                })
+                }
             );
+        }
+
+        private static IHook createHook() {
+            return new IHook() {
+                @Override
+                public void before() {
+                    try {
+                        String key = (String) getArgs(0);
+                        if (Objects.equals(key, "FLAG_ALWAYS_SHOW_TICKER")) {
+                            setResult(MeiZuNotification.class.getDeclaredField("FLAG_ALWAYS_SHOW_TICKER_HOOK"));
+                        } else if (Objects.equals(key, "FLAG_ONLY_UPDATE_TICKER")) {
+                            setResult(MeiZuNotification.class.getDeclaredField("FLAG_ONLY_UPDATE_TICKER_HOOK"));
+                        }
+                    } catch (Throwable e) {
+                    }
+                }
+            };
         }
 
         public static void notificationLyric(BaseLyric lyric) {
@@ -218,7 +226,7 @@ public abstract class BaseLyric extends BaseHC {
                             } else {
                                 lyric.sendStop(
                                     new SuperLyricData()
-                                    .setPackageName(lyric.mContext.getPackageName())
+                                        .setPackageName(lyric.mContext.getPackageName())
                                 );
                             }
                         }

@@ -5,5 +5,6 @@
         <item>com.miui.player</item>
         <item>com.kugou.android</item>
         <item>com.kugou.android.lite</item>
+        <item>com.tencent.qqmusic</item>
     </string-array>
 </resources>
