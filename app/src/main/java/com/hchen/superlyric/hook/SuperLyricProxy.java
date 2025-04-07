@@ -165,9 +165,12 @@ public class SuperLyricProxy extends BaseHC {
                             ),
                             "packageName"
                         );
-                        if (CollectMap.getAllPackageSet().contains(packageName) || SuperLyricService.mExemptSet.contains(packageName)) {
-                            mSuperLyricService.onDied(packageName);
-                            logD(TAG, "App: " + packageName + " is died!!");
+                        String processName = (String) getField(app, "processName");
+                        if (Objects.equals(packageName, processName)) { // 主进程
+                            if (CollectMap.getAllPackageSet().contains(packageName) || SuperLyricService.mExemptSet.contains(packageName)) {
+                                mSuperLyricService.onDied(packageName);
+                                logD(TAG, "App: " + packageName + " is died!!");
+                            }
                         }
                     }
                 }
