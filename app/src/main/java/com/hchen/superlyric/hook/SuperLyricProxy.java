@@ -33,6 +33,7 @@ import com.hchen.superlyric.state.PlayStateListener;
 import com.hchen.superlyricapi.ISuperLyric;
 
 import java.util.Objects;
+import java.util.Optional;
 
 @Collect(targetPackage = "android", onApplication = false)
 public class SuperLyricProxy extends BaseHC {
@@ -97,6 +98,7 @@ public class SuperLyricProxy extends BaseHC {
             new IHook() {
                 @Override
                 public void before() {
+                    if (mSuperLyricService == null) return;
                     if (!(getArgs(2) instanceof Intent intent)) return;
                     if (!Objects.equals(intent.getAction(), "Super_Lyric")) return;
 
@@ -137,6 +139,36 @@ public class SuperLyricProxy extends BaseHC {
                         }
                     } catch (Throwable e) {
                         logE(TAG, e);
+                    }
+                }
+            }
+        );
+
+        hookMethod("com.android.server.am.ActivityManagerService",
+            "appDiedLocked",
+            "com.android.server.am.ProcessRecord" /* app */, int.class /* pid */,
+            "android.app.IApplicationThread" /* thread */, boolean.class /* fromBinderDied */, String.class /* reason */,
+            new IHook() {
+                @Override
+                public void after() {
+                    if (mSuperLyricService == null) return;
+
+                    Object app = getArgs(0);
+                    boolean isKilled = (boolean) Optional.ofNullable(
+                        callMethod(app, "isKilled")
+                    ).orElse(true);
+                    if (isKilled) {
+                        String packageName = (String) getField(
+                            getField(
+                                app,
+                                "info"
+                            ),
+                            "packageName"
+                        );
+                        if (CollectMap.getAllPackageSet().contains(packageName) || SuperLyricService.mExemptSet.contains(packageName)) {
+                            mSuperLyricService.onDied(packageName);
+                            logD(TAG, "App: " + packageName + " is died!!");
+                        }
                     }
                 }
             }

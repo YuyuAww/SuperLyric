@@ -27,6 +27,10 @@ import com.hchen.superlyric.base.BaseLyric;
 import com.hchen.superlyricapi.SuperLyricData;
 
 public class Api extends BaseLyric {
+    @Override
+    protected boolean enabled() {
+        return existsClass("com.hchen.superlyricapi.SuperLyricTool");
+    }
 
     @Override
     protected void init() {
