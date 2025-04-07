@@ -103,32 +103,55 @@ public class SuperLyricProxy extends BaseHC {
                     Bundle bundle = intent.getExtras();
                     if (bundle == null) return;
 
-                    IBinder superLyricBinder = bundle.getBinder("super_lyric_binder");
-                    if (superLyricBinder == null) return;
-
                     try {
-                        ISuperLyric iSuperLyric = ISuperLyric.Stub.asInterface(superLyricBinder);
-                        mSuperLyricService.addSuperLyricBinder(iSuperLyric);
-                        if (bundle.getBoolean("super_lyric_self_control", false)) {
-                            synchronized (thisObject()) {
-                                Object callerApp = callThisMethod("getRecordForAppLOSP", getArgs(0));
-                                String packageName = (String) getField(
-                                    getField(
-                                        callerApp,
-                                        "info"
-                                    ),
-                                    "packageName"
-                                );
-                                mSuperLyricService.addSelfControlPackage(packageName);
+                        IBinder superLyricBinder = bundle.getBinder("super_lyric_binder");
+                        if (superLyricBinder != null) {
+                            ISuperLyric iSuperLyric = ISuperLyric.Stub.asInterface(superLyricBinder);
+                            mSuperLyricService.addSuperLyricBinder(superLyricBinder, iSuperLyric);
+                            if (bundle.getBoolean("super_lyric_self_control", false)) {
+                                synchronized (thisObject()) {
+                                    String pkg = getPackageName(thisObject(), getArgs(0));
+                                    mSuperLyricService.addSelfControlPackage(pkg);
+
+                                    logD(TAG, "Will add self control package name: " + pkg);
+                                }
+                            }
+
+                            logD(TAG, "Will add binder: " + superLyricBinder + ", super lyric binder: " + iSuperLyric);
+                        } else {
+                            superLyricBinder = bundle.getBinder("super_lyric_un_binder");
+                            if (superLyricBinder != null) {
+                                ISuperLyric iSuperLyric = ISuperLyric.Stub.asInterface(superLyricBinder);
+                                mSuperLyricService.removeSuperLyricBinder(superLyricBinder);
+
+                                logD(TAG, "Will remove binder: " + superLyricBinder + ", super lyric binder: " + iSuperLyric);
+                            }
+                            if (bundle.getBoolean("super_lyric_un_self_control", false)) {
+                                synchronized (thisObject()) {
+                                    String pkg = getPackageName(thisObject(), getArgs(0));
+                                    mSuperLyricService.removeSelfControlPackage(pkg);
+
+                                    logD(TAG, "Will remove self control package name: " + pkg);
+                                }
                             }
                         }
-
-                        logD(TAG, "Will add binder: " + iSuperLyric);
                     } catch (Throwable e) {
                         logE(TAG, e);
                     }
                 }
             }
+        );
+    }
+
+    private String getPackageName(Object instance, Object caller) {
+        Object callerApp = callMethod(instance, "getRecordForAppLOSP", caller);
+
+        return (String) getField(
+            getField(
+                callerApp,
+                "info"
+            ),
+            "packageName"
         );
     }
 }

@@ -33,15 +33,20 @@ public class Api extends BaseLyric {
         setStaticField("com.hchen.superlyricapi.SuperLyricTool", "isEnabled", true);
         hookMethod("com.hchen.superlyricapi.SuperLyricPush",
             "onStop",
+            "com.hchen.superlyricapi.SuperLyricData",
             new IHook() {
                 @Override
                 public void after() {
-                    sendStop();
+                    Parcel parcel = (Parcel) callMethod(getArgs(0), "marshall");
+                    if (parcel != null) {
+                        sendStop(SuperLyricData.unmarshall(parcel));
+                    }
                 }
             }
         );
         hookMethod("com.hchen.superlyricapi.SuperLyricPush",
-            "onSuperLyric", "com.hchen.superlyricapi.SuperLyricData",
+            "onSuperLyric",
+            "com.hchen.superlyricapi.SuperLyricData",
             new IHook() {
                 @Override
                 public void after() {

@@ -18,6 +18,7 @@
  */
 package com.hchen.superlyric.binder;
 
+import android.os.IBinder;
 import android.os.RemoteException;
 
 import com.hchen.hooktool.log.AndroidLog;
@@ -26,31 +27,67 @@ import com.hchen.superlyricapi.ISuperLyricDistributor;
 import com.hchen.superlyricapi.SuperLyricData;
 
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Predicate;
 
 public class SuperLyricService extends ISuperLyricDistributor.Stub {
     private static final String TAG = "SuperLyric";
     private static final Vector<ISuperLyric> mISuperLyricList = new Vector<>();
+    private static ConcurrentHashMap<IBinder, ISuperLyric> mIBinder2ISuperLyricMap = new ConcurrentHashMap<>();
     public static final CopyOnWriteArraySet<String> mExemptSet = new CopyOnWriteArraySet<>();
     public static final CopyOnWriteArraySet<String> mSelfControlSet = new CopyOnWriteArraySet<>();
 
-    public void addSuperLyricBinder(ISuperLyric iSuperLyric) {
-        mISuperLyricList.add(iSuperLyric);
+    public void addSuperLyricBinder(IBinder iBinder, ISuperLyric iSuperLyric) {
+        try {
+            if (mIBinder2ISuperLyricMap.get(iBinder) == null) {
+                mISuperLyricList.add(iSuperLyric);
+                mIBinder2ISuperLyricMap.put(iBinder, iSuperLyric);
+            }
+        } catch (Throwable e) {
+            AndroidLog.logW(TAG, "[addSuperLyricBinder]: Failed to add binder: " + iSuperLyric, e);
+        }
     }
 
     public void addSelfControlPackage(String packageName) {
+        if (packageName == null || packageName.isEmpty()) return;
         mSelfControlSet.add(packageName);
     }
 
+    public void removeSuperLyricBinder(IBinder iBinder) {
+        try {
+            if (mIBinder2ISuperLyricMap.get(iBinder) != null) {
+                ISuperLyric iSuperLyric = mIBinder2ISuperLyricMap.get(iBinder);
+                if (iSuperLyric == null) return;
+
+                mISuperLyricList.removeIf(new Predicate<ISuperLyric>() {
+                    @Override
+                    public boolean test(ISuperLyric sl) {
+                        return Objects.equals(sl, iSuperLyric);
+                    }
+                });
+                mIBinder2ISuperLyricMap.remove(iBinder);
+            }
+        } catch (Throwable e) {
+            AndroidLog.logW(TAG, "[removeSuperLyricBinder]: Failed to remove binder: " + iBinder, e);
+        }
+    }
+
+    public void removeSelfControlPackage(String packageName) {
+        if (packageName == null || packageName.isEmpty()) return;
+        mSelfControlSet.remove(packageName);
+    }
+
     @Override
-    public void onStop() throws RemoteException {
+    public void onStop(SuperLyricData data) throws RemoteException {
         Iterator<ISuperLyric> iterator = mISuperLyricList.iterator();
         while (iterator.hasNext()) {
             ISuperLyric superLyric = iterator.next();
             try {
-                superLyric.onStop();
-            } catch (RemoteException e) {
+                superLyric.onStop(data);
+            } catch (Throwable e) {
                 try {
                     iterator.remove();
                 } catch (Throwable ignore) {
@@ -67,7 +104,7 @@ public class SuperLyricService extends ISuperLyricDistributor.Stub {
             ISuperLyric superLyric = iterator.next();
             try {
                 superLyric.onSuperLyric(data);
-            } catch (RemoteException e) {
+            } catch (Throwable e) {
                 try {
                     iterator.remove();
                 } catch (Throwable ignore) {
@@ -79,6 +116,10 @@ public class SuperLyricService extends ISuperLyricDistributor.Stub {
 
     @Override
     public void onExempt(String packageName) throws RemoteException {
-        mExemptSet.add(packageName);
+        try {
+            mExemptSet.add(packageName);
+        } catch (Throwable e) {
+            AndroidLog.logE(TAG, "[onExempt]: Error!", e);
+        }
     }
 }

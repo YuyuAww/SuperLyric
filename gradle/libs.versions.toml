@@ -4,7 +4,7 @@ annotation = "1.9.1"
 api = "82"
 dexkit = "2.0.3"
 hooktool = "v.1.2.9"
-superlyricapi = "0.7"
+superlyricapi = "1.0"
 
 [libraries]
 annotation = { module = "androidx.annotation:annotation", version.ref = "annotation" }

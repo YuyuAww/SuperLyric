@@ -112,11 +112,11 @@ public abstract class BaseLyric extends BaseHC {
         if (lyric.isEmpty()) return;
         if (mISuperLyricDistributor == null) return;
 
-        SuperLyricData data = new SuperLyricData();
-        data.packageName = mContext.getPackageName();
-        data.lyric = lyric;
         try {
-            mISuperLyricDistributor.onSuperLyric(data);
+            mISuperLyricDistributor.onSuperLyric(new SuperLyricData()
+                .setPackageName(mContext.getPackageName())
+                .setLyric(lyric)
+            );
         } catch (RemoteException e) {
             logE(TAG, "sendLyric: ", e);
         }
@@ -124,10 +124,10 @@ public abstract class BaseLyric extends BaseHC {
         logD(TAG, "Lyric: " + lyric);
     }
 
-    public void sendStop() {
+    public void sendStop(SuperLyricData data) {
         if (mISuperLyricDistributor == null) return;
         try {
-            mISuperLyricDistributor.onStop();
+            mISuperLyricDistributor.onStop(data);
         } catch (RemoteException e) {
             logE(TAG, "sendStop: " + e);
         }
@@ -150,11 +150,12 @@ public abstract class BaseLyric extends BaseHC {
         if (metadata == null) return;
         if (mISuperLyricDistributor == null) return;
 
-        SuperLyricData data = new SuperLyricData();
-        data.packageName = mContext.getPackageName();
-        data.mediaMetadata = metadata;
         try {
-            mISuperLyricDistributor.onSuperLyric(data);
+            mISuperLyricDistributor.onSuperLyric(
+                new SuperLyricData()
+                    .setPackageName(mContext.getPackageName())
+                    .setMediaMetadata(metadata)
+            );
         } catch (RemoteException e) {
             logE(TAG, "sendMediaMetaData: ", e);
         }
@@ -213,7 +214,10 @@ public abstract class BaseLyric extends BaseHC {
                             if (notification.tickerText != null) {
                                 lyric.sendLyric(notification.tickerText.toString());
                             } else {
-                                lyric.sendStop();
+                                lyric.sendStop(
+                                    new SuperLyricData()
+                                    .setPackageName(lyric.mContext.getPackageName())
+                                );
                             }
                         }
                     }

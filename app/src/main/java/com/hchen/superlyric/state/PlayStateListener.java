@@ -93,7 +93,10 @@ public class PlayStateListener {
                      PlaybackState.STATE_STOPPED -> {
                     if (mISuperLyricDistributor != null) {
                         try {
-                            mISuperLyricDistributor.onStop();
+                            mISuperLyricDistributor.onStop(
+                                new SuperLyricData()
+                                    .setPackageName(mController.getPackageName())
+                            );
                         } catch (RemoteException ignore) {
                         }
                     }
@@ -112,10 +115,11 @@ public class PlayStateListener {
 
             if (mISuperLyricDistributor != null) {
                 try {
-                    SuperLyricData data = new SuperLyricData();
-                    data.packageName = mController.getPackageName();
-                    data.mediaMetadata = metadata;
-                    mISuperLyricDistributor.onSuperLyric(data);
+                    mISuperLyricDistributor.onSuperLyric(
+                        new SuperLyricData()
+                            .setPackageName(mController.getPackageName())
+                            .setMediaMetadata(metadata)
+                    );
                 } catch (RemoteException ignore) {
                 }
             }

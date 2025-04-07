@@ -31,7 +31,7 @@ interface ISuperLyricDistributor {
     //        double aDouble, String aString);
 
      // 代表歌曲被暂停
-    void onStop();
+    void onStop(in SuperLyricData data);
 
     // 当歌曲发生变化时调用
     void onSuperLyric(in SuperLyricData data);
