@@ -48,7 +48,6 @@ public class KuGou extends BaseLyric {
         super.onApplicationAfter(context);
 
         try {
-            long code = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).getLongVersionCode();
             if (Objects.equals(lpparam.processName, "com.kugou.android.support")) {
                 // if (code <= 10000) // 找不到这么低的版本了
                 //     hookCarLyric();
@@ -59,7 +58,7 @@ public class KuGou extends BaseLyric {
 
             // if (code <= 10000)
             //     MockFlyme.mock();
-            if (code <= 12009) {
+            if (versionCode <= 12009) {
                 // MockFlyme.mock();
                 hookLocalBroadcast("android.support.v4.content.LocalBroadcastManager");
             } else {

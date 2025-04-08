@@ -20,8 +20,6 @@ package com.hchen.superlyric.hook.music;
 
 import android.os.Parcel;
 
-import androidx.annotation.Nullable;
-
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.base.BaseLyric;
 import com.hchen.superlyricapi.SuperLyricData;
@@ -61,11 +59,5 @@ public class Api extends BaseLyric {
                 }
             }
         );
-    }
-
-    @Nullable
-    @Override
-    public String addExempt() {
-        return mContext.getPackageName();
     }
 }

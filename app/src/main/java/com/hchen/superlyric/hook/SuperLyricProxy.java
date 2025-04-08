@@ -25,7 +25,6 @@ import android.os.Bundle;
 import android.os.IBinder;
 
 import com.hchen.collect.Collect;
-import com.hchen.collect.CollectMap;
 import com.hchen.hooktool.BaseHC;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.binder.SuperLyricService;
@@ -74,9 +73,10 @@ public class SuperLyricProxy extends BaseHC {
                     if (intent == null) return;
 
                     String callerPackage = (String) getArgs(1);
-                    if (!CollectMap.getAllPackageSet().contains(callerPackage)
-                        && !SuperLyricService.mExemptSet.contains(callerPackage)
-                    ) return;
+                    // if (!CollectMap.getAllPackageSet().contains(callerPackage)
+                    //     && !SuperLyricService.mExemptSet.contains(callerPackage)
+                    // ) return;
+                    if (!SuperLyricService.mExemptSet.contains(callerPackage)) return;
 
                     Bundle bundle = new Bundle();
                     bundle.putBinder("super_lyric_binder", mSuperLyricService);
@@ -101,6 +101,12 @@ public class SuperLyricProxy extends BaseHC {
                     if (mSuperLyricService == null) return;
                     if (!(getArgs(2) instanceof Intent intent)) return;
                     if (!Objects.equals(intent.getAction(), "Super_Lyric")) return;
+
+                    String addPackage = intent.getStringExtra("super_lyric_add_package");
+                    if (addPackage != null) {
+                        mSuperLyricService.addExemptPackage(addPackage);
+                        return;
+                    }
 
                     Bundle bundle = intent.getExtras();
                     if (bundle == null) return;
@@ -167,7 +173,10 @@ public class SuperLyricProxy extends BaseHC {
                         );
                         String processName = (String) getField(app, "processName");
                         if (Objects.equals(packageName, processName)) { // 主进程
-                            if (CollectMap.getAllPackageSet().contains(packageName) || SuperLyricService.mExemptSet.contains(packageName)) {
+                            if (
+                                // CollectMap.getAllPackageSet().contains(packageName) ||
+                                SuperLyricService.mExemptSet.contains(packageName)
+                            ) {
                                 mSuperLyricService.onDied(packageName);
                                 logD(TAG, "App: " + packageName + " is died!!");
                             }

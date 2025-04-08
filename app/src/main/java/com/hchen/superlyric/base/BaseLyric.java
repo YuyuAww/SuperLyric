@@ -23,13 +23,13 @@ import android.app.Notification;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.media.MediaMetadata;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.RemoteException;
 
 import androidx.annotation.CallSuper;
-import androidx.annotation.Nullable;
 
 import com.hchen.hooktool.BaseHC;
 import com.hchen.hooktool.HCInit;
@@ -42,36 +42,51 @@ import java.util.Objects;
 public abstract class BaseLyric extends BaseHC {
     public Context mContext;
     public ISuperLyricDistributor mISuperLyricDistributor;
+    public long versionCode = -1L;
 
     @Override
     @CallSuper
     protected void onApplicationAfter(Context context) {
-        if (context == null) return;
+        if (!enabled()) return;
+
+        if (context == null) {
+            logW(TAG, "Failed to get context!!");
+            return;
+        }
 
         this.mContext = context;
-        Intent intent = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-        if (intent == null) return;
-        Bundle bundle = intent.getBundleExtra("super_lyric_info");
-        if (bundle == null) return;
+        Intent intent = new Intent("Super_Lyric");
+        intent.putExtra("super_lyric_add_package", mContext.getPackageName());
+        mContext.sendBroadcast(intent);
+
+        Intent intentBinder = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        if (intentBinder == null) {
+            logW(TAG, "Failed to get intent!!");
+            return;
+        }
+
+        Bundle bundle = intentBinder.getBundleExtra("super_lyric_info");
+        if (bundle == null) {
+            logW(TAG, "Failed to get bundle!!");
+            return;
+        }
+
         mISuperLyricDistributor = ISuperLyricDistributor.Stub.asInterface(
             bundle.getBinder("super_lyric_binder")
         );
 
-        if (addExempt() != null) {
-            try {
-                mISuperLyricDistributor.onExempt(addExempt());
-            } catch (RemoteException ignore) {
-            }
+        try {
+            versionCode = mContext.getPackageManager().getPackageInfo(mContext.getPackageName(), 0).getLongVersionCode();
+        } catch (PackageManager.NameNotFoundException e) {
+            logW(TAG, "Failed to get package: [" + mContext.getPackageName() + "] version code!!");
         }
+
         logD(TAG, "Success get binder: " + mISuperLyricDistributor);
     }
 
-    @Nullable
-    public String addExempt() {
-        return null;
-    }
-
     public void onTinker() {
+        if (!existsClass("com.tencent.tinker.loader.TinkerLoader")) return;
+
         hookMethod("com.tencent.tinker.loader.TinkerLoader",
             "tryLoad", "com.tencent.tinker.loader.app.TinkerApplication",
             new IHook() {
@@ -98,6 +113,25 @@ public abstract class BaseLyric extends BaseHC {
             "isEnabled",
             returnResult(true)
         );
+    }
+
+    public void mediaMetadataCompatLyric() {
+        if (existsClass("android.support.v4.media.MediaMetadataCompat$Builder")) {
+            hookMethod("android.support.v4.media.MediaMetadataCompat$Builder",
+                "putString",
+                String.class, String.class,
+                new IHook() {
+                    @Override
+                    public void after() {
+                        if (Objects.equals("android.media.metadata.TITLE", getArgs(0))) {
+                            String lyric = (String) getArgs(1);
+                            if (lyric == null) return;
+                            sendLyric(lyric);
+                        }
+                    }
+                }
+            );
+        }
     }
 
     private String lastLyric;
@@ -173,11 +207,12 @@ public abstract class BaseLyric extends BaseHC {
         }
 
         public static void mock() {
-            hookMethod(Class.class, "getField", String.class, createHook());
-            hookMethod(Class.class, "getDeclaredField", String.class, createHook());
+            hookMethod("java.lang.Class", "getField", String.class, createHook());
+            hookMethod("java.lang.Class", "getDeclaredField", String.class, createHook());
 
-            hookAllMethod("android.os.SystemProperties",
+            hookMethod("android.os.SystemProperties",
                 "get",
+                String.class, String.class,
                 new IHook() {
                     @Override
                     public void after() {
@@ -197,13 +232,14 @@ public abstract class BaseLyric extends BaseHC {
                 @Override
                 public void before() {
                     try {
-                        String key = (String) getArgs(0);
+                        String key = (String) param.args[0];
                         if (Objects.equals(key, "FLAG_ALWAYS_SHOW_TICKER")) {
-                            setResult(MeiZuNotification.class.getDeclaredField("FLAG_ALWAYS_SHOW_TICKER_HOOK"));
+                            param.setResult(MeiZuNotification.class.getDeclaredField("FLAG_ALWAYS_SHOW_TICKER_HOOK"));
                         } else if (Objects.equals(key, "FLAG_ONLY_UPDATE_TICKER")) {
-                            setResult(MeiZuNotification.class.getDeclaredField("FLAG_ONLY_UPDATE_TICKER_HOOK"));
+                            param.setResult(MeiZuNotification.class.getDeclaredField("FLAG_ONLY_UPDATE_TICKER_HOOK"));
                         }
                     } catch (Throwable e) {
+                        logE(TAG, e);
                     }
                 }
             };

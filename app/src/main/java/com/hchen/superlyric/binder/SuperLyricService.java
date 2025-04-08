@@ -114,9 +114,10 @@ public class SuperLyricService extends ISuperLyricDistributor.Stub {
         }
     }
 
-    @Override
-    public void onExempt(String packageName) throws RemoteException {
+    public void addExemptPackage(String packageName) {
         try {
+            if (packageName == null || packageName.isEmpty()) return;
+
             mExemptSet.add(packageName);
         } catch (Throwable e) {
             AndroidLog.logE(TAG, "[onExempt]: Error!", e);

@@ -6,5 +6,6 @@
         <item>com.kugou.android</item>
         <item>com.kugou.android.lite</item>
         <item>com.tencent.qqmusic</item>
+        <item>com.netease.cloudmusic</item>
     </string-array>
 </resources>

@@ -49,11 +49,11 @@ public class KuGouLite extends BaseLyric {
         super.onApplicationAfter(context);
 
         try {
-            long code = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).getLongVersionCode();
+            // long code = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).getLongVersionCode();
             if (!Objects.equals(lpparam.processName, "com.kugou.android.lite.support")) {
                 if (!enableStatusBarLyric()) return;
 
-                if (code <= 10935)
+                if (versionCode <= 10935)
                     hookLocalBroadcast("android.support.v4.content.LocalBroadcastManager");
                 else
                     hookLocalBroadcast("androidx.localbroadcastmanager.content.LocalBroadcastManager");

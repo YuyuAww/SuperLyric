@@ -39,6 +39,14 @@ public class DexKitUtils {
         isInit = false;
     }
 
+    private static void initDexKit(ClassLoader classLoader) {
+        if (mDexKitBridge != null) return;
+
+        System.loadLibrary("dexkit");
+        mDexKitBridge = DexKitBridge.create(classLoader, false);
+        isInit = true;
+    }
+
     private static void initDexKit() {
         if (mDexKitBridge != null) return;
         String hostDir = mLoadPackageParam.appInfo.sourceDir;
@@ -46,6 +54,15 @@ public class DexKitUtils {
         System.loadLibrary("dexkit");
         mDexKitBridge = DexKitBridge.create(hostDir);
         isInit = true;
+    }
+
+    public static DexKitBridge getDexKitBridge(ClassLoader classLoader) {
+        if (!isInit)
+            initDexKit(classLoader);
+
+        if (mDexKitBridge == null)
+            throw new RuntimeException(TAG + ": mDexKitBridge is null!!");
+        return mDexKitBridge;
     }
 
     public static DexKitBridge getDexKitBridge() {

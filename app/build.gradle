@@ -3,6 +3,8 @@ plugins {
 }
 
 android {
+    def apk = "SuperLyric"
+
     namespace 'com.hchen.superlyric'
     compileSdk 35
 
@@ -37,6 +39,14 @@ android {
     }
 
     aaptOptions.additionalParameters '--allow-reserved-package-id', '--package-id', '0x53'
+
+    android {
+        applicationVariants.configureEach { variant ->
+            variant.outputs.configureEach { output ->
+                outputFileName = "${apk}-v${variant.versionName}_${variant.versionCode}_${variant.buildType.name}.apk"
+            }
+        }
+    }
 }
 
 dependencies {
