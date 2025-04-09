@@ -133,6 +133,7 @@ public class SuperLyricService extends ISuperLyricDistributor.Stub {
         if (packageName == null || packageName.isEmpty()) return;
 
         try {
+            mExemptSet.remove(packageName); // 死后自动移除豁免
             onStop(new SuperLyricData().setPackageName(packageName));
         } catch (Throwable e) {
             AndroidLog.logE(TAG, "App :" + packageName + " is died!", e);
