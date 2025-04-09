@@ -38,6 +38,7 @@ public class Api extends BaseLyric {
     @Override
     protected void init() {
         setStaticField("com.hchen.superlyricapi.SuperLyricTool", "isEnabled", true);
+
         hookMethod("com.hchen.superlyricapi.SuperLyricPush",
             "onStop",
             "com.hchen.superlyricapi.SuperLyricData",
@@ -51,6 +52,7 @@ public class Api extends BaseLyric {
                 }
             }
         );
+
         hookMethod("com.hchen.superlyricapi.SuperLyricPush",
             "onSuperLyric",
             "com.hchen.superlyricapi.SuperLyricData",

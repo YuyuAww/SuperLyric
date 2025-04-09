@@ -75,7 +75,7 @@ public class DexKitUtils {
     }
 
     /**
-     * 请勿手动调用。
+     * 请勿手动调用
      */
     public static void close() {
         if (!isInit) return;
