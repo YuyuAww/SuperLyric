@@ -35,6 +35,9 @@ import java.util.Objects;
 
 import kotlin.jvm.functions.Function0;
 
+/**
+ * 酷狗音乐
+ */
 @Collect(targetPackage = "com.kugou.android")
 public class KuGou extends BaseLyric {
     @Override

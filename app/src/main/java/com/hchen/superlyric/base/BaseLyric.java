@@ -39,6 +39,11 @@ import com.hchen.superlyricapi.SuperLyricData;
 
 import java.util.Objects;
 
+/**
+ * Super Lyric 基类
+ *
+ * @author 焕晨HChen
+ */
 public abstract class BaseLyric extends BaseHC {
     public Context mContext;
     public ISuperLyricDistributor mISuperLyricDistributor;

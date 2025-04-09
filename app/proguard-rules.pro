@@ -23,6 +23,7 @@
 -keep class com.hchen.superlyric.InitHook
 -keep class com.hchen.superlyric.hook.**
 -keep class com.hchen.superlyric.hook.**$*
+-keep class com.hchen.superlyric.base.BaseLyric$MockFlyme$MeiZuNotification {*;}
 -keep class  com.hchen.hooktool.HCState {
         static boolean isEnabled;
         static java.lang.String mFramework;
@@ -31,8 +32,4 @@
 -keep class * implements android.os.Parcelable {
         public static ** CREATOR;
 }
-
--keep class com.hchen.superlyricapi.ISuperLyric {*;}
--keep class com.hchen.superlyricapi.ISuperLyricDistributor {*;}
--keep class com.hchen.superlyricapi.SuperLyricData {*;}
--keep class * extends com.hchen.superlyricapi.SuperLyricExtra {*;}
+-keep class com.hchen.superlyricapi.* {*;}

@@ -19,6 +19,7 @@
 package com.hchen.superlyric;
 
 import static com.hchen.hooktool.HCInit.LOG_D;
+import static com.hchen.hooktool.HCInit.LOG_I;
 
 import com.hchen.collect.CollectMap;
 import com.hchen.hooktool.BaseHC;
@@ -35,6 +36,11 @@ import java.util.function.Consumer;
 
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
+/**
+ * Hook 入口
+ *
+ * @author 焕晨HChen
+ */
 public class InitHook extends HCEntrance {
     private static final String TAG = "SuperLyric";
     private static final HashMap<String, BaseHC> mCacheBaseHCMap = new HashMap<>();
@@ -42,7 +48,7 @@ public class InitHook extends HCEntrance {
     @Override
     public HCInit.BasicData initHC(HCInit.BasicData basicData) {
         return basicData.setTag(TAG)
-            .setLogLevel(LOG_D)
+            .setLogLevel(BuildConfig.DEBUG ? LOG_D : LOG_I)
             .setModulePackageName(BuildConfig.APPLICATION_ID)
             .setLogExpandPath(new String[]{
                 "com.hchen.superlyric.hook"

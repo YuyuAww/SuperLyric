@@ -33,6 +33,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Predicate;
 
+/**
+ * Super Lyric 服务
+ *
+ * @author 焕晨HChen
+ */
 public class SuperLyricService extends ISuperLyricDistributor.Stub {
     private static final String TAG = "SuperLyric";
     private static final Vector<ISuperLyric> mISuperLyricList = new Vector<>();

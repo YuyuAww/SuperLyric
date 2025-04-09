@@ -24,6 +24,11 @@ import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.base.BaseLyric;
 import com.hchen.superlyricapi.SuperLyricData;
 
+/**
+ * API 代理
+ *
+ * @author 焕晨HChen
+ */
 public class Api extends BaseLyric {
     @Override
     protected boolean enabled() {

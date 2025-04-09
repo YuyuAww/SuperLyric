@@ -34,6 +34,11 @@ import com.hchen.superlyricapi.ISuperLyric;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * 代理 Super Lyric 服务
+ *
+ * @author 焕晨HChen
+ */
 @Collect(targetPackage = "android", onApplication = false)
 public class SuperLyricProxy extends BaseHC {
     private static SuperLyricService mSuperLyricService;

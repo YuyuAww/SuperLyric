@@ -16,6 +16,9 @@ import org.luckypray.dexkit.result.ClassData;
 import java.lang.reflect.Method;
 import java.util.Objects;
 
+/**
+ * 网易云音乐
+ */
 @Collect(targetPackage = "com.netease.cloudmusic")
 public class Netease extends BaseLyric {
 

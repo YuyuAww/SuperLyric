@@ -24,6 +24,9 @@ import com.hchen.superlyric.base.BaseLyric;
 
 import java.util.Objects;
 
+/**
+ * 小米音乐
+ */
 @Collect(targetPackage = "com.miui.player")
 public class MiPlayer extends BaseLyric {
     @Override

@@ -36,6 +36,11 @@ import com.hchen.superlyricapi.SuperLyricData;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * 播放状态监听
+ *
+ * @author 焕晨HChen
+ */
 public class PlayStateListener {
     private final Context mContext;
     private static ISuperLyricDistributor mISuperLyricDistributor;
