@@ -22,10 +22,10 @@ import com.hchen.collect.Collect;
 import com.hchen.superlyric.base.BaseLyric;
 
 /**
- * QQ 音乐
+ * 糖醋音乐
  */
-@Collect(targetPackage = "com.tencent.qqmusic")
-public class QQMusic extends BaseLyric {
+@Collect(targetPackage = "com.xuncorp.suvine.music")
+public class SuvineMusic extends BaseLyric {
     @Override
     protected void init() {
         MockFlyme.mock();

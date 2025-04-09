@@ -7,5 +7,7 @@
         <item>com.kugou.android.lite</item>
         <item>com.tencent.qqmusic</item>
         <item>com.netease.cloudmusic</item>
+        <item>com.xuncorp.suvine.music</item>
+        <item>com.salt.music</item>
     </string-array>
 </resources>
