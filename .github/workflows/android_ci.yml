@@ -61,24 +61,58 @@ jobs:
           name: SuperLyric_debug
           path: ./app/build/outputs/apk/debug
 
+      - name: Find Apks
+        run: |
+          echo "APK_RELEASE_PATH=$(find app/build/outputs/apk/release/ -name '*.apk')" >> $GITHUB_ENV
+          echo "APK_DEBUG_PATH=$(find app/build/outputs/apk/debug/ -name '*.apk')" >> $GITHUB_ENV
+
+      - name: Show Apks SHA256
+        run: |
+          echo "APK_RELEASE_SHA256=$(sha256sum ${{ env.APK_RELEASE_PATH }} | awk '{print $1}')" >> $GITHUB_ENV
+          echo "APK_DEBUG_SHA256=$(sha256sum ${{ env.APK_DEBUG_PATH }}) | awk '{print $1}'" >> $GITHUB_ENV
+          echo "### Build Success" >> $GITHUB_STEP_SUMMARY
+          echo "|Artifact|SHA256|" >> $GITHUB_STEP_SUMMARY
+          echo "|:---:|:---|" >> $GITHUB_STEP_SUMMARY
+          echo "|Release|${{ env.APK_RELEASE_SHA256 }}|"
+          echo "|Debug|${{ env.APK_DEBUG_SHA256 }}|"
+
       - name: Get App Version
         id: version
         run: |
-          VERSION_NAME=$(grep versionName app/build/outputs/apk/release/output-metadata.json | head -1 | cut -d ':' -f2 | cut -d \" -f2)
+          VERSION_NAME=$(jq -r '.elements[0].versionName' app/build/outputs/apk/release/output-metadata.json)
           echo "VERSION_NAME=$VERSION_NAME"
           echo "version=$VERSION_NAME" >> "$GITHUB_OUTPUT"
 
+      - name: Check if Tag Exists
+        id: check_tag
+        run: |
+          TAG=${{ steps.version.outputs.version }}
+          if git ls-remote --tags origin | grep -q "refs/tags/$TAG"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create GitHub Release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: steps.check_tag.outputs.exists == 'false' && github.event_name == 'push' && github.ref == 'refs/heads/master'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.version }}
           name: SuperLyric ${{ steps.version.outputs.version }}
           body: |
-            🎉 新版本发布！
+            ### SuperLyric ${{ steps.version.outputs.version }}
+            #### 🎉 新版本发布！
 
             ${{ github.event.head_commit.message }}
+            
+            #### 模块信息：
+            - Release
+            - SHA 256：${{ env.APK_RELEASE_SHA256 }}
+            - Debug
+            - SHA 256：${{ env.APK_DEBUG_SHA256 }}
+            
+            - 正常使用建议安装 Release 版本，反馈 BUG 请使用 Debug 版本！
+
           draft: false
           prerelease: false
           files: ./app/build/outputs/apk/**/*.apk
-
