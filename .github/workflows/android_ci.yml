@@ -7,9 +7,12 @@ on:
       - "*.md"
   pull_request:
     branches: [ "master" ]
+    types: [ opened, synchronize, reopened ]
 
 jobs:
   build:
+
+    name: Build SuperLyric - ${{ github.event_name }}
 
     runs-on: ubuntu-latest
 
@@ -37,7 +40,7 @@ jobs:
           echo keyAlias=${{ secrets.ALIAS }} >> local.properties
           echo keyStorePassword=${{ secrets.KEY_STORE_PASSWORD }} >> local.properties
           echo keyAliasPassword=${{ secrets.KEY_STORE_PASSWORD }} >> local.properties
-          echo keyStoreFile=key.jks >> local.properties
+          echo keyStoreFile=../key.jks >> local.properties
           echo "${{ secrets.SIGNING_KEY }}" | base64 --decode > key.jks
 
       - name: Grant execute permission for gradlew
@@ -66,6 +69,7 @@ jobs:
           echo "version=$VERSION_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.version }}
