@@ -66,15 +66,18 @@ jobs:
           echo "APK_RELEASE_PATH=$(find app/build/outputs/apk/release/ -name '*.apk')" >> $GITHUB_ENV
           echo "APK_DEBUG_PATH=$(find app/build/outputs/apk/debug/ -name '*.apk')" >> $GITHUB_ENV
 
-      - name: Show Apks SHA256
+      - name: Calculate SHA256
         run: |
           echo "APK_RELEASE_SHA256=$(sha256sum ${{ env.APK_RELEASE_PATH }} | awk '{print $1}')" >> $GITHUB_ENV
-          echo "APK_DEBUG_SHA256=$(sha256sum ${{ env.APK_DEBUG_PATH }}) | awk '{print $1}')" >> $GITHUB_ENV
+          echo "APK_DEBUG_SHA256=$(sha256sum ${{ env.APK_DEBUG_PATH }} | awk '{print $1}')" >> $GITHUB_ENV
+
+      - name: Show Apks SHA256
+        run: |
           echo "### Build Success" >> $GITHUB_STEP_SUMMARY
           echo "|Artifact|SHA256|" >> $GITHUB_STEP_SUMMARY
           echo "|:---:|:---|" >> $GITHUB_STEP_SUMMARY
-          echo "|Release|${{ env.APK_RELEASE_SHA256 }}|"
-          echo "|Debug|${{ env.APK_DEBUG_SHA256 }}|"
+          echo "|Release|${{ env.APK_RELEASE_SHA256 }}|" >> $GITHUB_STEP_SUMMARY
+          echo "|Debug|${{ env.APK_DEBUG_SHA256 }}|" >> $GITHUB_STEP_SUMMARY
 
       - name: Get App Version
         id: version
@@ -92,7 +95,6 @@ jobs:
           else
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
-          echo "${{ steps.check_tag.outputs.exists }}"
 
       - name: Create GitHub Release
         if: steps.check_tag.outputs.exists == 'false' && github.event_name == 'push' && github.ref == 'refs/heads/master'
