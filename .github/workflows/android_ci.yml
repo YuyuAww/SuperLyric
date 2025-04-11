@@ -96,6 +96,12 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Extract Clean Changelog
+        id: changelog
+        run: |
+          LOG=$(echo "${{ github.event.head_commit.message }}" | tail -n +3)
+          echo "log_body=$LOG" >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release
         if: steps.check_tag.outputs.exists == 'false' && github.event_name == 'push' && github.ref == 'refs/heads/master'
         uses: softprops/action-gh-release@v2
@@ -106,7 +112,7 @@ jobs:
             ### SuperLyric ${{ steps.version.outputs.version }}
             #### 🎉 新版本发布！
 
-            ${{ github.event.head_commit.message }}
+            ${{ steps.changelog.outputs.log_body }}
             
             #### 模块信息：
             - Release

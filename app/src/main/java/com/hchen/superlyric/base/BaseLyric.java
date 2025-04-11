@@ -30,6 +30,7 @@ import android.os.Bundle;
 import android.os.RemoteException;
 
 import androidx.annotation.CallSuper;
+import androidx.annotation.NonNull;
 
 import com.hchen.hooktool.BaseHC;
 import com.hchen.hooktool.HCInit;
@@ -232,12 +233,23 @@ public abstract class BaseLyric extends BaseHC {
             );
         }
 
+        public static void mock(@NonNull IHook iHook) {
+            hookMethod("java.lang.Class", "getField", String.class, createHook());
+            hookMethod("java.lang.Class", "getDeclaredField", String.class, createHook());
+
+            hookMethod("android.os.SystemProperties",
+                "get",
+                String.class, String.class,
+                iHook
+            );
+        }
+
         private static IHook createHook() {
             return new IHook() {
                 @Override
                 public void before() {
                     try {
-                        String key = (String) param.args[0];
+                        String key = (String) getArgs(0);
                         if (Objects.equals(key, "FLAG_ALWAYS_SHOW_TICKER")) {
                             param.setResult(MeiZuNotification.class.getDeclaredField("FLAG_ALWAYS_SHOW_TICKER_HOOK"));
                         } else if (Objects.equals(key, "FLAG_ONLY_UPDATE_TICKER")) {

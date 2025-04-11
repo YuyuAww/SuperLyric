@@ -36,11 +36,10 @@ import java.lang.reflect.Method;
 import java.util.Objects;
 
 /**
- * 网易云音乐
+ * 荣耀音乐
  */
-@Collect(targetPackage = "com.netease.cloudmusic")
-public class Netease extends BaseLyric {
-
+@Collect(targetPackage = "com.hihonor.cloudmusic")
+public class Hihonor extends BaseLyric {
     @Override
     protected void init() {
         if (existsClass("android.app.Instrumentation")) {
@@ -66,50 +65,46 @@ public class Netease extends BaseLyric {
         HCInit.setClassLoader(context.getClassLoader());
         onTinker();
 
-        if (versionCode >= 8000041) {
-            MockFlyme.mock(new IHook() {
-                @Override
-                public void after() {
-                    setStaticField(Build.class, "DISPLAY", "Flyme");
-                }
-            });
-            MockFlyme.notificationLyric(this);
+        MockFlyme.mock(new IHook() {
+            @Override
+            public void after() {
+                setStaticField(Build.class, "DISPLAY", "Flyme");
+            }
+        });
+        MockFlyme.notificationLyric(this);
 
-            ClassData classData = DexKitUtils.getDexKitBridge(classLoader).findClass(FindClass.create()
-                .matcher(ClassMatcher.create()
-                    .usingStrings("com/netease/cloudmusic/module/lyric/flyme/StatusBarLyricSettingManager.class:setSwitchStatus:(Z)V")
-                )
-            ).singleOrNull();
+        ClassData classData = DexKitUtils.getDexKitBridge(classLoader).findClass(FindClass.create()
+            .matcher(ClassMatcher.create()
+                .usingStrings("com/netease/cloudmusic/module/lyric/flyme/StatusBarLyricSettingManager.class:setSwitchStatus:(Z)V")
+            )
+        ).singleOrNull();
 
-            try {
-                if (classData != null) {
-                    Class<?> clazz = classData.getInstance(classLoader);
-                    for (Method method : clazz.getDeclaredMethods()) {
-                        if (method.getReturnType().equals(boolean.class)) {
-                            hook(method, returnResult(true));
-                        } else if (method.getParameterCount() == 1 && method.getParameterTypes()[0].equals(boolean.class)) {
-                            hook(method, new IHook() {
-                                @Override
-                                public void before() {
-                                    setArgs(0, true);
-                                }
-                            });
-                        } else if (method.getReturnType().equals(SharedPreferences.class)) {
-                            hook(method, new IHook() {
-                                @Override
-                                public void after() {
-                                    SharedPreferences sp = (SharedPreferences) getResult();
-                                    sp.edit().putBoolean("status_bar_lyric_setting_key", true).apply();
-                                }
-                            });
-                        }
+        try {
+            if (classData != null) {
+                Class<?> clazz = classData.getInstance(classLoader);
+                for (Method method : clazz.getDeclaredMethods()) {
+                    if (method.getReturnType().equals(boolean.class)) {
+                        hook(method, returnResult(true));
+                    } else if (method.getParameterCount() == 1 && method.getParameterTypes()[0].equals(boolean.class)) {
+                        hook(method, new IHook() {
+                            @Override
+                            public void before() {
+                                setArgs(0, true);
+                            }
+                        });
+                    } else if (method.getReturnType().equals(SharedPreferences.class)) {
+                        hook(method, new IHook() {
+                            @Override
+                            public void after() {
+                                SharedPreferences sp = (SharedPreferences) getResult();
+                                sp.edit().putBoolean("status_bar_lyric_setting_key", true).apply();
+                            }
+                        });
                     }
                 }
-            } catch (ClassNotFoundException e) {
-                logE(TAG, "Failed to hook status bar lyric!!");
             }
-        } else {
-            mediaMetadataCompatLyric();
+        } catch (ClassNotFoundException e) {
+            logE(TAG, "Failed to hook status bar lyric!!");
         }
     }
 }
