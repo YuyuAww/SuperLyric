@@ -56,8 +56,8 @@ android {
         minSdk 31
         targetSdk sdk
         // noinspection HighAppVersionCode
-        versionCode 2025041100
-        versionName "1.2"
+        versionCode 2025041200
+        versionName "1.3"
 
         ndk {
             // noinspection ChromeOsAbiSupport

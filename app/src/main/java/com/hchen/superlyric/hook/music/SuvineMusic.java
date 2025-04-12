@@ -28,7 +28,7 @@ import com.hchen.superlyric.base.BaseLyric;
 public class SuvineMusic extends BaseLyric {
     @Override
     protected void init() {
-        MockFlyme.mock();
+        // MockFlyme.mock();
         MockFlyme.notificationLyric(this);
     }
 }

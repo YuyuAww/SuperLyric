@@ -21,14 +21,11 @@ package com.hchen.superlyric.hook.music;
 import com.hchen.collect.Collect;
 import com.hchen.superlyric.base.BaseLyric;
 
-/**
- * 椒盐音乐
- */
-@Collect(targetPackage = "com.salt.music")
-public class SaltMusic extends BaseLyric {
+@Collect(targetPackage = "com.lalilu.lmusic")
+public class LMusic extends BaseLyric {
     @Override
     protected void init() {
-        // MockFlyme.mock();
+        MockFlyme.mock();
         MockFlyme.notificationLyric(this);
     }
 }
