@@ -21,13 +21,10 @@ package com.hchen.superlyric.hook.music;
 import com.hchen.collect.Collect;
 import com.hchen.superlyric.base.BaseLyric;
 
-/**
- * 小米音乐
- */
-@Collect(targetPackage = "com.miui.player")
-public class MiPlayer extends BaseLyric {
+@Collect(targetPackage = "com.mimicry.mymusic")
+public class Mimicry extends BaseLyric {
     @Override
     protected void init() {
-        if (QQLite.isQQLite()) QQLite.init(this);
+        MockFlyme.notificationLyric(this);
     }
 }

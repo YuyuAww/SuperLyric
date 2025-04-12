@@ -37,7 +37,6 @@ import java.util.ArrayList;
 public class LXMusic extends BaseLyric {
     @Override
     protected void init() {
-
         // 所需 setCurrentLyric 类是混淆的，从 LyricModule 类逆向获取
         Class<?> lyricModuleClass = findClass("cn.toside.music.mobile.lyric.LyricModule");
         if (lyricModuleClass == null) return;

@@ -288,4 +288,32 @@ public abstract class BaseLyric extends BaseHC {
             );
         }
     }
+
+    public static class QQLite {
+        public static boolean isQQLite() {
+            return existsClass("com.tencent.qqmusic.core.song.SongInfo");
+        }
+
+        public static void init(BaseLyric baseLyric) {
+            hookMethod("com.tencent.qqmusiccommon.util.music.RemoteLyricController",
+                "BluetoothA2DPConnected",
+                returnResult(true)
+            );
+
+            hookMethod("com.tencent.qqmusiccommon.util.music.RemoteControlManager",
+                "updataMetaData",
+                "com.tencent.qqmusic.core.song.SongInfo", String.class,
+                new IHook() {
+                    @Override
+                    public void before() {
+                        String lyric = (String) getArgs(1);
+                        if (lyric == null || lyric.isEmpty()) return;
+                        if (Objects.equals(lyric, "NEED_NOT_UPDATE_TITLE")) return;
+
+                        baseLyric.sendLyric(lyric);
+                    }
+                }
+            );
+        }
+    }
 }

@@ -18,16 +18,21 @@
  */
 package com.hchen.superlyric.hook.music;
 
+import android.content.Context;
+
 import com.hchen.collect.Collect;
 import com.hchen.superlyric.base.BaseLyric;
 
-/**
- * 小米音乐
- */
-@Collect(targetPackage = "com.miui.player")
-public class MiPlayer extends BaseLyric {
+@Collect(targetPackage = "org.kde.kdeconnect_tp")
+public class Kde extends BaseLyric {
     @Override
     protected void init() {
-        if (QQLite.isQQLite()) QQLite.init(this);
+    }
+
+    @Override
+    protected void onApplicationAfter(Context context) {
+        super.onApplicationAfter(context);
+
+        mediaMetadataCompatLyric();
     }
 }
