@@ -20,5 +20,6 @@
         <item>com.mimicry.mymusic</item>
         <item>cmccwm.mobilemusic</item>
         <item>cn.kuwo.player</item>
+        <item>com.apple.android.music</item>
     </string-array>
 </resources>

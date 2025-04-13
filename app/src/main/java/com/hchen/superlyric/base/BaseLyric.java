@@ -149,6 +149,10 @@ public abstract class BaseLyric extends BaseHC {
     private String lastLyric;
 
     public void sendLyric(String lyric) {
+        sendLyric(lyric, 0);
+    }
+
+    public void sendLyric(String lyric, Integer delay) {
         if (lyric == null) return;
         if (iSuperLyricDistributor == null) return;
 
@@ -161,12 +165,13 @@ public abstract class BaseLyric extends BaseHC {
             iSuperLyricDistributor.onSuperLyric(new SuperLyricData()
                 .setPackageName(context.getPackageName())
                 .setLyric(lyric)
+                .setDelay(delay)
             );
         } catch (RemoteException e) {
             logE(TAG, "sendLyric: ", e);
         }
 
-        logD(TAG, "Lyric: " + lyric);
+        logD(TAG, delay != 0 ? "Lyric: " + lyric + ", Delay: " + delay : "Lyric: " + lyric);
     }
 
     public void sendStop(SuperLyricData data) {
