@@ -53,11 +53,11 @@ android {
 
     defaultConfig {
         applicationId pkg
-        minSdk 31
+        minSdk 30
         targetSdk sdk
         // noinspection HighAppVersionCode
-        versionCode 2025041201
-        versionName "1.4"
+        versionCode 2025041300
+        versionName "1.5"
 
         ndk {
             // noinspection ChromeOsAbiSupport

@@ -24,6 +24,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.media.AudioManager;
 import android.media.MediaMetadata;
 import android.os.Build;
 import android.os.Bundle;
@@ -39,6 +40,8 @@ import com.hchen.superlyricapi.ISuperLyricDistributor;
 import com.hchen.superlyricapi.SuperLyricData;
 
 import java.util.Objects;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Super Lyric 基类
@@ -46,9 +49,10 @@ import java.util.Objects;
  * @author 焕晨HChen
  */
 public abstract class BaseLyric extends BaseHC {
-    public Context mContext;
-    public ISuperLyricDistributor mISuperLyricDistributor;
+    private ISuperLyricDistributor iSuperLyricDistributor;
+    public static AudioManager audioManager;
     public long versionCode = -1L;
+    public Context context;
 
     @Override
     @CallSuper
@@ -60,10 +64,12 @@ public abstract class BaseLyric extends BaseHC {
             return;
         }
 
-        this.mContext = context;
+        this.context = context;
+        audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+
         Intent intent = new Intent("Super_Lyric");
-        intent.putExtra("super_lyric_add_package", mContext.getPackageName());
-        mContext.sendBroadcast(intent);
+        intent.putExtra("super_lyric_add_package", this.context.getPackageName());
+        this.context.sendBroadcast(intent);
 
         Intent intentBinder = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
         if (intentBinder == null) {
@@ -77,17 +83,17 @@ public abstract class BaseLyric extends BaseHC {
             return;
         }
 
-        mISuperLyricDistributor = ISuperLyricDistributor.Stub.asInterface(
+        iSuperLyricDistributor = ISuperLyricDistributor.Stub.asInterface(
             bundle.getBinder("super_lyric_binder")
         );
 
         try {
-            versionCode = mContext.getPackageManager().getPackageInfo(mContext.getPackageName(), 0).getLongVersionCode();
+            versionCode = this.context.getPackageManager().getPackageInfo(this.context.getPackageName(), 0).getLongVersionCode();
         } catch (PackageManager.NameNotFoundException e) {
-            logW(TAG, "Failed to get package: [" + mContext.getPackageName() + "] version code!!");
+            logW(TAG, "Failed to get package: [" + this.context.getPackageName() + "] version code!!");
         }
 
-        logD(TAG, "Success get binder: " + mISuperLyricDistributor);
+        logD(TAG, "Success get binder: " + iSuperLyricDistributor);
     }
 
     public void onTinker() {
@@ -144,7 +150,7 @@ public abstract class BaseLyric extends BaseHC {
 
     public void sendLyric(String lyric) {
         if (lyric == null) return;
-        if (mISuperLyricDistributor == null) return;
+        if (iSuperLyricDistributor == null) return;
 
         try {
             lyric = lyric.trim();
@@ -152,8 +158,8 @@ public abstract class BaseLyric extends BaseHC {
             if (lyric.isEmpty()) return;
             lastLyric = lyric;
 
-            mISuperLyricDistributor.onSuperLyric(new SuperLyricData()
-                .setPackageName(mContext.getPackageName())
+            iSuperLyricDistributor.onSuperLyric(new SuperLyricData()
+                .setPackageName(context.getPackageName())
                 .setLyric(lyric)
             );
         } catch (RemoteException e) {
@@ -164,10 +170,10 @@ public abstract class BaseLyric extends BaseHC {
     }
 
     public void sendStop(SuperLyricData data) {
-        if (mISuperLyricDistributor == null) return;
+        if (iSuperLyricDistributor == null) return;
 
         try {
-            mISuperLyricDistributor.onStop(data);
+            iSuperLyricDistributor.onStop(data);
         } catch (RemoteException e) {
             logE(TAG, "sendStop: " + e);
         }
@@ -176,10 +182,10 @@ public abstract class BaseLyric extends BaseHC {
     }
 
     public void sendSuperLyricData(SuperLyricData data) {
-        if (mISuperLyricDistributor == null) return;
+        if (iSuperLyricDistributor == null) return;
 
         try {
-            mISuperLyricDistributor.onSuperLyric(data);
+            iSuperLyricDistributor.onSuperLyric(data);
         } catch (RemoteException e) {
             logE(TAG, "sendSuperLyricData: " + e);
         }
@@ -189,12 +195,12 @@ public abstract class BaseLyric extends BaseHC {
 
     public void sendMediaMetaData(MediaMetadata metadata) {
         if (metadata == null) return;
-        if (mISuperLyricDistributor == null) return;
+        if (iSuperLyricDistributor == null) return;
 
         try {
-            mISuperLyricDistributor.onSuperLyric(
+            iSuperLyricDistributor.onSuperLyric(
                 new SuperLyricData()
-                    .setPackageName(mContext.getPackageName())
+                    .setPackageName(context.getPackageName())
                     .setMediaMetadata(metadata)
             );
         } catch (RemoteException e) {
@@ -202,6 +208,38 @@ public abstract class BaseLyric extends BaseHC {
         }
 
         logD(TAG, "MediaMetadata: " + metadata);
+    }
+
+    public static class Timeout {
+        private static Timer timer = new Timer();
+        private static boolean isRunning = false;
+
+        public static void start(BaseLyric lyric) {
+            if (isRunning) return;
+
+            timer = new Timer();
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    if (audioManager != null && !audioManager.isMusicActive()) {
+                        lyric.sendStop(
+                            new SuperLyricData()
+                                .setPackageName(lyric.context.getPackageName())
+                        );
+                        stop();
+                    }
+                }
+            }, 0, 1000);
+            isRunning = true;
+        }
+
+        public static void stop() {
+            if (timer == null || !isRunning) return;
+
+            timer.cancel();
+            timer = null;
+            isRunning = false;
+        }
     }
 
     public static class MockFlyme {
@@ -279,7 +317,7 @@ public abstract class BaseLyric extends BaseHC {
                             } else {
                                 lyric.sendStop(
                                     new SuperLyricData()
-                                        .setPackageName(lyric.mContext.getPackageName())
+                                        .setPackageName(lyric.context.getPackageName())
                                 );
                             }
                         }

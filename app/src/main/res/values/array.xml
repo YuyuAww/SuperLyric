@@ -19,5 +19,6 @@
         <item>com.meizu.media.music</item>
         <item>com.mimicry.mymusic</item>
         <item>cmccwm.mobilemusic</item>
+        <item>cn.kuwo.player</item>
     </string-array>
 </resources>

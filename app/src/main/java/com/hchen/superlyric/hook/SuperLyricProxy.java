@@ -31,6 +31,7 @@ import com.hchen.superlyric.binder.SuperLyricService;
 import com.hchen.superlyric.state.PlayStateListener;
 import com.hchen.superlyricapi.ISuperLyric;
 
+import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -47,7 +48,7 @@ public class SuperLyricProxy extends BaseHC {
     protected void init() {
         hookMethod("com.android.server.am.ActivityManagerService",
             "systemReady",
-            Runnable.class, "com.android.server.utils.TimingsTraceAndSlog",
+            Runnable.class /* goingCallback */, "com.android.server.utils.TimingsTraceAndSlog" /* t */,
             new IHook() {
                 @Override
                 public void after() {
@@ -63,12 +64,34 @@ public class SuperLyricProxy extends BaseHC {
             }
         );
 
-        hookMethod("com.android.server.am.ActivityManagerService",
+        Method registerReceiverWithFeatureMethod = null;
+        if (existsMethod("com.android.server.am.ActivityManagerService",
             "registerReceiverWithFeature",
-            "android.app.IApplicationThread" /* caller */, String.class /* callerPackage */,
-            String.class /* callerFeatureId */, String.class /* receiverId */,
-            "android.content.IIntentReceiver" /* receiver */, IntentFilter.class /* filter */,
-            String.class /* permission */, int.class /* userId */, int.class /* flags */,
+            "android.app.IApplicationThread", String.class, String.class, String.class,
+            "android.content.IIntentReceiver", IntentFilter.class, String.class, int.class, int.class))
+            registerReceiverWithFeatureMethod = findMethod("com.android.server.am.ActivityManagerService",
+                "registerReceiverWithFeature",
+                "android.app.IApplicationThread" /* caller */, String.class /* callerPackage */,
+                String.class /* callerFeatureId */, String.class /* receiverId */,
+                "android.content.IIntentReceiver" /* receiver */, IntentFilter.class /* filter */,
+                String.class /* permission */, int.class /* userId */, int.class /* flags */);
+
+        else if (existsMethod("com.android.server.am.ActivityManagerService",
+            "registerReceiverWithFeature",
+            "android.app.IApplicationThread", String.class, String.class, "android.content.IIntentReceiver",
+            IntentFilter.class, String.class, int.class, int.class))
+            registerReceiverWithFeatureMethod = findMethod("com.android.server.am.ActivityManagerService",
+                "registerReceiverWithFeature",
+                "android.app.IApplicationThread" /* caller */, String.class /* callerPackage */,
+                String.class /* callerFeatureId */, "android.content.IIntentReceiver" /* receiver */,
+                IntentFilter.class /* filter */, String.class /* permission */, int.class /* userId */, int.class /* flags */);
+
+        if (registerReceiverWithFeatureMethod == null) {
+            logW(TAG,"Failed to get method:[registerReceiverWithFeature], maybe can't use super lyric!!");
+            return;
+        }
+
+        hook(registerReceiverWithFeatureMethod,
             new IHook() {
                 @Override
                 public void after() {
@@ -93,13 +116,45 @@ public class SuperLyricProxy extends BaseHC {
             }
         );
 
-        hookMethod("com.android.server.am.ActivityManagerService",
-            "broadcastIntentWithFeature",
-            "android.app.IApplicationThread" /* caller */, String.class /* callingFeatureId */, Intent.class /* intent */,
-            String.class /* resolvedType */, "android.content.IIntentReceiver" /* resultTo */, int.class /* resultCode */,
-            String.class /* resultData */, Bundle.class /* resultExtras */, String[].class /* requiredPermissions */,
-            String[].class /* excludedPermissions */, String[].class /* excludedPackages */, int.class /* appOp */,
-            Bundle.class /* bOptions */, boolean.class /* serialized */, boolean.class /* sticky */, int.class /* userId */,
+        Method broadcastIntentWithFeatureMethod = null;
+        if (existsMethod("com.android.server.am.ActivityManagerService", "broadcastIntentWithFeature",
+            "android.app.IApplicationThread", String.class, Intent.class, String.class, "android.content.IIntentReceiver", int.class,
+            String.class, Bundle.class, String[].class, String[].class, String[].class, int.class, Bundle.class, boolean.class, boolean.class, int.class))
+            broadcastIntentWithFeatureMethod = findMethod("com.android.server.am.ActivityManagerService",
+                "broadcastIntentWithFeature",
+                "android.app.IApplicationThread" /* caller */, String.class /* callingFeatureId */, Intent.class /* intent */,
+                String.class /* resolvedType */, "android.content.IIntentReceiver" /* resultTo */, int.class /* resultCode */,
+                String.class /* resultData */, Bundle.class /* resultExtras */, String[].class /* requiredPermissions */,
+                String[].class /* excludedPermissions */, String[].class /* excludedPackages */, int.class /* appOp */,
+                Bundle.class /* bOptions */, boolean.class /* serialized */, boolean.class /* sticky */, int.class /* userId */);
+
+        else if (existsMethod("com.android.server.am.ActivityManagerService", "broadcastIntentWithFeature",
+            "android.app.IApplicationThread", String.class, Intent.class, String.class, "android.content.IIntentReceiver", int.class,
+            String.class, Bundle.class, String[].class, String[].class, int.class, Bundle.class, boolean.class, boolean.class, int.class))
+            broadcastIntentWithFeatureMethod = findMethod("com.android.server.am.ActivityManagerService",
+                "broadcastIntentWithFeature",
+                "android.app.IApplicationThread" /* caller */, String.class /* callingFeatureId */, Intent.class /* intent */,
+                String.class /* resolvedType */, "android.content.IIntentReceiver" /* resultTo */, int.class /* resultCode */,
+                String.class /* resultData */, Bundle.class /* resultExtras */, String[].class /* requiredPermissions */,
+                String[].class /* excludedPermissions */, int.class /* appOp */, Bundle.class /* bOptions */,
+                boolean.class /* serialized */, boolean.class /* sticky */, int.class /* userId */);
+
+        else if (existsMethod("com.android.server.am.ActivityManagerService", "broadcastIntentWithFeature",
+            "android.app.IApplicationThread", String.class, Intent.class, String.class, "android.content.IIntentReceiver", int.class,
+            String.class, Bundle.class, String[].class, int.class, Bundle.class, boolean.class, boolean.class, int.class))
+            broadcastIntentWithFeatureMethod = findMethod("com.android.server.am.ActivityManagerService",
+                "broadcastIntentWithFeature",
+                "android.app.IApplicationThread" /* caller */, String.class /* callingFeatureId */, Intent.class /* intent */,
+                String.class /* resolvedType */, "android.content.IIntentReceiver" /* resultTo */, int.class /* resultCode */,
+                String.class /* resultData */, Bundle.class /* resultExtras */, String[].class /* requiredPermissions */, int.class /* appOp */,
+                Bundle.class /* bOptions */, boolean.class /* serialized */, boolean.class /* sticky */, int.class /* userId */);
+
+        if (broadcastIntentWithFeatureMethod == null) {
+            logW(TAG,"Failed to get method:[broadcastIntentWithFeature], maybe can't use super lyric!!");
+            return;
+        }
+
+        hook(broadcastIntentWithFeatureMethod,
             new IHook() {
                 @Override
                 public void before() {

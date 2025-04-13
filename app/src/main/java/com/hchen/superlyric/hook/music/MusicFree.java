@@ -50,6 +50,7 @@ public class MusicFree extends BaseLyric {
                     String lyric = (String) getArgs(0);
                     if (lyric.isEmpty()) return;
 
+                    Timeout.start(MusicFree.this);
                     sendLyric(lyric);
                 }
             }
