@@ -35,6 +35,9 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Objects;
 
+/**
+ * 酷我音乐
+ */
 @Collect(targetPackage = "cn.kuwo.player")
 public class KuWo extends BaseLyric {
     @Override
