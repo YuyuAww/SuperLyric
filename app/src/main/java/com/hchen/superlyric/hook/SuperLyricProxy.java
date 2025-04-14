@@ -27,6 +27,7 @@ import android.os.IBinder;
 import com.hchen.collect.Collect;
 import com.hchen.hooktool.BaseHC;
 import com.hchen.hooktool.hook.IHook;
+import com.hchen.superlyric.binder.SuperLyricControllerService;
 import com.hchen.superlyric.binder.SuperLyricService;
 import com.hchen.superlyric.state.PlayStateListener;
 import com.hchen.superlyricapi.ISuperLyric;
@@ -43,6 +44,7 @@ import java.util.Optional;
 @Collect(targetPackage = "android", onApplication = false)
 public class SuperLyricProxy extends BaseHC {
     private static SuperLyricService mSuperLyricService;
+    private static SuperLyricControllerService mSuperLyricControllerService;
 
     @Override
     protected void init() {
@@ -54,6 +56,7 @@ public class SuperLyricProxy extends BaseHC {
                 public void after() {
                     if (mSuperLyricService == null) {
                         mSuperLyricService = new SuperLyricService();
+                        mSuperLyricControllerService = new SuperLyricControllerService(mSuperLyricService);
 
                         Context context = (Context) getThisField("mContext");
                         new PlayStateListener(context, mSuperLyricService).start();
@@ -87,7 +90,7 @@ public class SuperLyricProxy extends BaseHC {
                 IntentFilter.class /* filter */, String.class /* permission */, int.class /* userId */, int.class /* flags */);
 
         if (registerReceiverWithFeatureMethod == null) {
-            logW(TAG,"Failed to get method:[registerReceiverWithFeature], maybe can't use super lyric!!");
+            logW(TAG, "Failed to get method:[registerReceiverWithFeature], maybe can't use super lyric!!");
             return;
         }
 
@@ -104,10 +107,13 @@ public class SuperLyricProxy extends BaseHC {
                     // if (!CollectMap.getAllPackageSet().contains(callerPackage)
                     //     && !SuperLyricService.mExemptSet.contains(callerPackage)
                     // ) return;
-                    if (!SuperLyricService.mExemptSet.contains(callerPackage)) return;
+                    if (!SuperLyricService.mExemptSet.contains(callerPackage) &&
+                        !SuperLyricControllerService.mFinalExemptSet.contains(callerPackage))
+                        return;
 
                     Bundle bundle = new Bundle();
                     bundle.putBinder("super_lyric_binder", mSuperLyricService);
+                    bundle.putBinder("super_lyric_controller", mSuperLyricControllerService.getBinder());
                     intent.putExtra("super_lyric_info", bundle);
                     setResult(intent);
 
@@ -150,7 +156,7 @@ public class SuperLyricProxy extends BaseHC {
                 Bundle.class /* bOptions */, boolean.class /* serialized */, boolean.class /* sticky */, int.class /* userId */);
 
         if (broadcastIntentWithFeatureMethod == null) {
-            logW(TAG,"Failed to get method:[broadcastIntentWithFeature], maybe can't use super lyric!!");
+            logW(TAG, "Failed to get method:[broadcastIntentWithFeature], maybe can't use super lyric!!");
             return;
         }
 
@@ -172,18 +178,31 @@ public class SuperLyricProxy extends BaseHC {
                     if (bundle == null) return;
 
                     try {
+                        String unController = bundle.getString("super_lyric_un_controller");
+                        if (unController != null && !unController.isEmpty()) {
+                            if (mSuperLyricControllerService != null)
+                                mSuperLyricControllerService.removeSuperLyricStubIfNeed(unController);
+                            return;
+                        }
+
+                        if (bundle.getBoolean("super_lyric_self_control", false)) {
+                            String pkg = bundle.getString("super_lyric_self_control_package");
+                            mSuperLyricService.addSelfControlPackage(pkg);
+
+                            logD(TAG, "Will add self control package name: " + pkg);
+                            return;
+                        } else if (bundle.getBoolean("super_lyric_un_self_control", false)) {
+                            String pkg = bundle.getString("super_lyric_un_self_control_package");
+                            mSuperLyricService.removeSelfControlPackage(pkg);
+
+                            logD(TAG, "Will remove self control package name: " + pkg);
+                            return;
+                        }
+
                         IBinder superLyricBinder = bundle.getBinder("super_lyric_binder");
                         if (superLyricBinder != null) {
                             ISuperLyric iSuperLyric = ISuperLyric.Stub.asInterface(superLyricBinder);
                             mSuperLyricService.addSuperLyricBinder(superLyricBinder, iSuperLyric);
-                            if (bundle.getBoolean("super_lyric_self_control", false)) {
-                                synchronized (thisObject()) {
-                                    String pkg = getPackageName(thisObject(), getArgs(0));
-                                    mSuperLyricService.addSelfControlPackage(pkg);
-
-                                    logD(TAG, "Will add self control package name: " + pkg);
-                                }
-                            }
 
                             logD(TAG, "Will add binder: " + superLyricBinder + ", super lyric binder: " + iSuperLyric);
                         } else {
@@ -193,14 +212,6 @@ public class SuperLyricProxy extends BaseHC {
                                 mSuperLyricService.removeSuperLyricBinder(superLyricBinder);
 
                                 logD(TAG, "Will remove binder: " + superLyricBinder + ", super lyric binder: " + iSuperLyric);
-                            }
-                            if (bundle.getBoolean("super_lyric_un_self_control", false)) {
-                                synchronized (thisObject()) {
-                                    String pkg = getPackageName(thisObject(), getArgs(0));
-                                    mSuperLyricService.removeSelfControlPackage(pkg);
-
-                                    logD(TAG, "Will remove self control package name: " + pkg);
-                                }
                             }
                         }
                     } catch (Throwable e) {
@@ -235,7 +246,8 @@ public class SuperLyricProxy extends BaseHC {
                         if (Objects.equals(packageName, processName)) { // 主进程
                             if (
                                 // CollectMap.getAllPackageSet().contains(packageName) ||
-                                SuperLyricService.mExemptSet.contains(packageName)
+                                SuperLyricService.mExemptSet.contains(packageName) ||
+                                    SuperLyricControllerService.mFinalExemptSet.contains(packageName)
                             ) {
                                 mSuperLyricService.onDied(packageName);
                                 logD(TAG, "App: " + packageName + " is died!!");
@@ -244,18 +256,6 @@ public class SuperLyricProxy extends BaseHC {
                     }
                 }
             }
-        );
-    }
-
-    private String getPackageName(Object instance, Object caller) {
-        Object callerApp = callMethod(instance, "getRecordForAppLOSP", caller);
-
-        return (String) getField(
-            getField(
-                callerApp,
-                "info"
-            ),
-            "packageName"
         );
     }
 }

@@ -26,10 +26,9 @@ import com.hchen.superlyricapi.ISuperLyric;
 import com.hchen.superlyricapi.ISuperLyricDistributor;
 import com.hchen.superlyricapi.SuperLyricData;
 
-import java.util.Iterator;
 import java.util.Objects;
-import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Predicate;
 
@@ -40,7 +39,7 @@ import java.util.function.Predicate;
  */
 public class SuperLyricService extends ISuperLyricDistributor.Stub {
     private static final String TAG = "SuperLyric";
-    private static final Vector<ISuperLyric> mISuperLyricList = new Vector<>();
+    private static final CopyOnWriteArrayList<ISuperLyric> mISuperLyricList = new CopyOnWriteArrayList<>();
     private final static ConcurrentHashMap<IBinder, ISuperLyric> mIBinder2ISuperLyricMap = new ConcurrentHashMap<>();
     public static final CopyOnWriteArraySet<String> mExemptSet = new CopyOnWriteArraySet<>();
     public static final CopyOnWriteArraySet<String> mSelfControlSet = new CopyOnWriteArraySet<>();
@@ -87,14 +86,12 @@ public class SuperLyricService extends ISuperLyricDistributor.Stub {
 
     @Override
     public void onStop(SuperLyricData data) throws RemoteException {
-        Iterator<ISuperLyric> iterator = mISuperLyricList.iterator();
-        while (iterator.hasNext()) {
-            ISuperLyric superLyric = iterator.next();
+        for (ISuperLyric superLyric : mISuperLyricList) {
             try {
                 superLyric.onStop(data);
             } catch (Throwable e) {
                 try {
-                    iterator.remove();
+                    mISuperLyricList.remove(superLyric);
                 } catch (Throwable ignore) {
                 }
                 AndroidLog.logE(TAG, "[onStop]: Will remove: " + superLyric, e);
@@ -104,14 +101,12 @@ public class SuperLyricService extends ISuperLyricDistributor.Stub {
 
     @Override
     public void onSuperLyric(SuperLyricData data) throws RemoteException {
-        Iterator<ISuperLyric> iterator = mISuperLyricList.iterator();
-        while (iterator.hasNext()) {
-            ISuperLyric superLyric = iterator.next();
+        for (ISuperLyric superLyric : mISuperLyricList) {
             try {
                 superLyric.onSuperLyric(data);
             } catch (Throwable e) {
                 try {
-                    iterator.remove();
+                    mISuperLyricList.remove(superLyric);
                 } catch (Throwable ignore) {
                 }
                 AndroidLog.logE(TAG, "[onSuperLyric]: Will remove: " + superLyric, e);
@@ -134,6 +129,7 @@ public class SuperLyricService extends ISuperLyricDistributor.Stub {
 
         try {
             mExemptSet.remove(packageName); // 死后自动移除豁免
+            mSelfControlSet.remove(packageName); // 移除自我控制
             onStop(new SuperLyricData().setPackageName(packageName));
         } catch (Throwable e) {
             AndroidLog.logE(TAG, "App :" + packageName + " is died!", e);

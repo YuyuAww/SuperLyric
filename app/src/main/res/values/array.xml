@@ -21,5 +21,6 @@
         <item>cmccwm.mobilemusic</item>
         <item>cn.kuwo.player</item>
         <item>com.apple.android.music</item>
+        <item>statusbar.finder</item>
     </string-array>
 </resources>
