@@ -32,6 +32,7 @@ import com.hchen.collect.Collect;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.base.BaseLyric;
 import com.hchen.superlyric.utils.DexKitUtils;
+import com.hchen.superlyricapi.SuperLyricData;
 
 import org.luckypray.dexkit.query.FindClass;
 import org.luckypray.dexkit.query.FindMethod;
@@ -167,18 +168,16 @@ public class Apple extends BaseLyric {
                                     currentTitle = newTitle;
                                     logD(TAG, "Current song title: " + currentTitle);
 
+                                    // 停止歌词
+                                    sendLyric("");
+                                    sendStop(new SuperLyricData().setPackageName(context.getPackageName()));
+
                                     // 重置状态
                                     lyricList.clear();
                                     isRequested = false;
+                                    isRunning = false;
                                     lastShownLyric = null;
 
-                                    // 停止当前歌词显示
-                                    sendStop(null);
-
-                                    // 歌曲变化后延迟请求歌词
-                                    if (currentTrackId != null) {
-                                        mainHandler.postDelayed(() -> requestLyrics(), 400);
-                                    }
                                 }
                             } catch (Exception e) {
                                 logE(TAG, "Error getting MediaMetadata", e);
@@ -188,7 +187,7 @@ public class Apple extends BaseLyric {
             );
         }
 
-        // Hook 应用创建，初始化 LyricViewModel
+        // Hook 初始化 LyricViewModel
         hookMethod("com.apple.android.music.AppleMusicApplication",
                 "onCreate",
                 new IHook() {
@@ -321,10 +320,7 @@ public class Apple extends BaseLyric {
 
                                         if (!isRequested) {
                                             isRequested = true;
-                                            mainHandler.postDelayed(() -> {
-                                                requestLyrics();
-                                                mainHandler.postDelayed(() -> isRequested = false, 1000);
-                                            }, 400);
+                                            mainHandler.postDelayed(() -> requestLyrics(), 400);
                                         }
                                     }
                                 }
@@ -351,13 +347,11 @@ public class Apple extends BaseLyric {
     }
 
     private void updateLyricList() {
-        lyricList.clear();
-        lastShownLyric = null;
+        if (lyricObject == null || lyricConvertMethodName == null) return;
+        LinkedList<LyricsLine> newLyricList = new LinkedList<>();
 
         try {
-            if (lyricObject == null || lyricConvertMethodName == null) return;
-
-            int i = 1;
+            int i = 0;
             while (true) {
                 Object lyricsLinePtr;
                 try {
@@ -375,12 +369,13 @@ public class Apple extends BaseLyric {
                 Integer end = (Integer) callMethod(lyricsLine, "getEnd");
 
                 if (lyric != null && start != null && end != null) {
-                    if (!lyricList.isEmpty() && lyricList.getLast().start > start) {
-                        lyricList.clear();
-                    }
-                    lyricList.add(new LyricsLine(start, end, lyric));
+                    newLyricList.add(new LyricsLine(start, end, lyric));
                 }
                 i++;
+            }
+            if (!newLyricList.isEmpty() && (lyricList.isEmpty() || newLyricList.getFirst().start != lyricList.getFirst().start)) {
+                lyricList.clear();
+                lyricList.addAll(newLyricList);
             }
 
             logD(TAG, "Loaded " + lyricList.size() + " lyrics lines");
@@ -427,7 +422,7 @@ public class Apple extends BaseLyric {
                     lastShownLyric = currentLine;
                 }
 
-                // 继续循环
+                // 循环获取
                 lyricHandler.postDelayed(this, 400);
             }
         });
