@@ -22,5 +22,6 @@
         <item>cn.kuwo.player</item>
         <item>com.apple.android.music</item>
         <item>statusbar.finder</item>
+        <item>org.akanework.gramophone</item>
     </string-array>
 </resources>
