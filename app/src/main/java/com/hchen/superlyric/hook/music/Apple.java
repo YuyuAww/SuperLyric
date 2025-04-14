@@ -304,13 +304,9 @@ public class Apple extends BaseLyric {
                                     StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
                                     String traceString = getStackTraceString(stackTrace);
 
-                                    if (traceString.contains("getItemAtIndex") &&
-                                            (traceString.contains("e3.h.w") || //3.10.2
-                                                    traceString.contains("i7.u.accept") ||//4.0.0
-                                                    traceString.contains("k7.t.accept") || // 4.1.0
-                                                    traceString.contains("G4.u.accept") // 4.9.6
-                                            )) {
-
+                                    if (traceString.contains("getItemAtIndex")
+                                            && traceString.contains(".accept") // 4.0.0+
+                                    ) {
                                         currentTrackId = trackId;
                                         playbackItem = thisObject();
                                         logD(TAG, "Current music ID: " + currentTrackId);
