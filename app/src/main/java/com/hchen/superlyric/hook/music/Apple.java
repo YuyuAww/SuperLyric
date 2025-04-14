@@ -23,6 +23,7 @@ import android.content.Context;
 import android.media.MediaMetadata;
 import android.media.session.PlaybackState;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
@@ -41,25 +42,31 @@ import org.luckypray.dexkit.result.MethodData;
 
 import java.lang.reflect.Constructor;
 import java.util.LinkedList;
-import java.util.Timer;
-import java.util.TimerTask;
+
+import de.robv.android.xposed.XposedHelpers;
 
 /**
  * Apple Music
  */
 @Collect(targetPackage = "com.apple.android.music")
 public class Apple extends BaseLyric {
-
     private Class<?> lyricConvertClass;
     private String lyricConvertMethodName;
+    private Object currentSongInfo;
+    private Object lyricObject;
     private PlaybackState playbackState;
+    private Object playbackItem;
+    private Object lyricViewModel;
 
     private final LinkedList<LyricsLine> lyricList = new LinkedList<>();
     private String currentTitle = "";
-    private int delay = 0;
-
-    private Timer timer;
+    private String currentTrackId;
+    private boolean isRequested = false;
     private boolean isRunning = false;
+
+    private Handler mainHandler;
+    private Handler lyricHandler;
+    private LyricsLine lastShownLyric;
 
     static class LyricsLine {
         int start;
@@ -75,54 +82,39 @@ public class Apple extends BaseLyric {
 
     @Override
     protected void init() {
+        // 初始化 Handler
+        mainHandler = new Handler(Looper.getMainLooper());
+        HandlerThread lyricThread = new HandlerThread("AppleMusicLyricThread");
+        lyricThread.start();
+        lyricHandler = new Handler(lyricThread.getLooper());
+
+        // Hook 歌词构建方法
         hookMethod("com.apple.android.music.player.viewmodel.PlayerLyricsViewModel", "buildTimeRangeToLyricsMap",
                 "com.apple.android.music.ttml.javanative.model.SongInfo$SongInfoPtr",
                 new IHook() {
                     @Override
                     public void after() {
-                        Object curSongInfo = callMethod(getArgs(0), "get");
-                        if (curSongInfo == null) return;
+                        Object songInfoPtr = getArgs(0);
+                        if (songInfoPtr == null) return;
 
-                        Object lyricsSectionVector = callMethod(curSongInfo, "getSections");
-                        if (lyricsSectionVector == null || lyricConvertClass == null) return;
+                        currentSongInfo = callMethod(songInfoPtr, "get");
+                        if (currentSongInfo == null || lyricConvertClass == null) return;
+
+                        Object lyricsSectionVector = callMethod(currentSongInfo, "getSections");
+                        if (lyricsSectionVector == null) return;
 
                         try {
                             Constructor<?> constructor = lyricConvertClass.getConstructor(lyricsSectionVector.getClass());
-                            Object curLyricObj = constructor.newInstance(lyricsSectionVector);
-
-                            lyricList.clear();
-                            int i = 1;
-                            while (true) {
-                                Object lyricsLinePtr;
-                                try {
-                                    lyricsLinePtr = callMethod(curLyricObj, lyricConvertMethodName, i);
-                                    if (lyricsLinePtr == null) break;
-                                } catch (Exception e) {
-                                    break;
-                                }
-
-                                Object lyricsLine = callMethod(lyricsLinePtr, "get");
-                                if (lyricsLine == null) break;
-
-                                String lyric = (String) callMethod(lyricsLine, "getHtmlLineText");
-                                Integer start = (Integer) callMethod(lyricsLine, "getBegin");
-                                Integer end = (Integer) callMethod(lyricsLine, "getEnd");
-
-                                if (lyric != null && start != null && end != null) {
-                                    if (!lyricList.isEmpty() && lyricList.getLast().start > start) {
-                                        lyricList.clear();
-                                    }
-                                    lyricList.add(new LyricsLine(start, end, lyric));
-                                }
-                                i++;
-                            }
+                            lyricObject = constructor.newInstance(lyricsSectionVector);
+                            updateLyricList();
                         } catch (Exception e) {
-                            logE(TAG, "Error processing lyrics", e);
+                            logE(TAG, "Error creating lyric converter", e);
                         }
                     }
                 }
         );
 
+        // Hook PlaybackState 构造
         hookAllConstructor("android.media.session.PlaybackState",
                 new IHook() {
                     @Override
@@ -132,39 +124,127 @@ public class Apple extends BaseLyric {
                 }
         );
 
-        if (existsClass("android.support.v4.media.MediaMetadataCompat")) {
-            hookAllMethod("android.support.v4.media.MediaMetadataCompat", "a",
+        // Hook MediaMetadata 变化
+        if (existsClass("android.support.v4.media.session.MediaControllerCompat$a$a")) {
+            hookMethod("android.support.v4.media.session.MediaControllerCompat$a$a",
+                    "onMetadataChanged",
+                    android.media.MediaMetadata.class,
                     new IHook() {
                         @Override
-                        public void after() {
-                            if (getArgs(0) instanceof MediaMetadata mediaMetadata) {
-                                String title = mediaMetadata.getString(MediaMetadata.METADATA_KEY_TITLE);
-                                if (title != null && !title.equals(currentTitle)) {
-                                    currentTitle = title;
-                                    lyricList.clear();
-                                    sendStop(null);
+                        public void before() {
+                            try {
+                                // 获取MediaMetadata实例
+                                Object metadataCompat = callStaticMethod(
+                                        findClass("android.support.v4.media.MediaMetadataCompat"),
+                                        "a",
+                                        getArgs(0)
+                                );
+                                Object metadataOjb = null;
+                                String[] possibleFieldNames = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k",
+                                        "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v",
+                                        "w", "x", "y", "z"};
+
+                                for (String fieldName : possibleFieldNames) {
+                                    try {
+                                        metadataOjb = XposedHelpers.getObjectField(metadataCompat, fieldName);
+                                        if (metadataOjb instanceof MediaMetadata) {
+                                            break;
+                                        }
+                                        metadataOjb = null;
+                                    } catch (NoSuchFieldError ignored) {
+                                        // 字段不存在，静默忽略
+                                    } catch (Exception ignored) {
+                                        logD(TAG, "MediaMetadata is null");
+                                        return;
+                                    }
                                 }
+
+                                MediaMetadata metadata = (MediaMetadata) metadataOjb;
+                                String newTitle = metadata.getString(MediaMetadata.METADATA_KEY_TITLE);
+
+                                // 检测歌曲变化
+                                if (newTitle != null && !currentTitle.equals(newTitle)) {
+                                    currentTitle = newTitle;
+                                    logD(TAG, "Current song title: " + currentTitle);
+
+                                    // 重置状态
+                                    lyricList.clear();
+                                    isRequested = false;
+                                    lastShownLyric = null;
+
+                                    // 停止当前歌词显示
+                                    sendStop(null);
+
+                                    // 歌曲变化后延迟请求歌词
+                                    if (currentTrackId != null) {
+                                        mainHandler.postDelayed(() -> requestLyrics(), 400);
+                                    }
+                                }
+                            } catch (Exception e) {
+                                logE(TAG, "Error getting MediaMetadata", e);
                             }
                         }
                     }
             );
         }
 
+        // Hook 应用创建，初始化 LyricViewModel
+        hookMethod("com.apple.android.music.AppleMusicApplication",
+                "onCreate",
+                new IHook() {
+                    @Override
+                    public void after() {
+                        try {
+                            Application application = (Application) thisObject();
+                            Class<?> playerLyricsViewModelClass = findClass("com.apple.android.music.player.viewmodel.PlayerLyricsViewModel");
+                            if (playerLyricsViewModelClass != null) {
+                                Constructor<?> constructor = playerLyricsViewModelClass.getConstructor(Application.class);
+                                lyricViewModel = constructor.newInstance(application);
+                            }
+                        } catch (Exception e) {
+                            logE(TAG, "Failed to initialize LyricViewModel", e);
+                        }
+                    }
+                }
+        );
+
+        // Hook 播放状态变化
         if (existsClass("android.support.v4.media.session.MediaControllerCompat$a$b")) {
-            hookAllMethod("android.support.v4.media.session.MediaControllerCompat$a$b",
+            hookMethod("android.support.v4.media.session.MediaControllerCompat$a$b",
                     "handleMessage",
+                    android.os.Message.class,
                     new IHook() {
                         @Override
-                        public void after() {
-                            if (getArgs(0) instanceof Message message && message.what == 2 && playbackState != null) {
-                                switch (playbackState.getState()) {
-                                    case PlaybackState.STATE_PLAYING:
-                                        startTimer();
-                                        break;
-                                    case PlaybackState.STATE_PAUSED:
-                                        stopTimer();
-                                        break;
+                        public void before() {
+                            Message m = (Message) getArgs(0);
+                            if (m.what == 2) {
+                                // 获取 PlaybackStateCompat 对象
+                                Object playbackStateCompat = m.obj;
+                                if (playbackStateCompat == null) return;
+
+                                // 获取 PlaybackState 对象
+                                Object playbackStateObj = null;
+                                String[] possibleFieldNames = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L",
+                                        "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W",
+                                        "X", "Y", "Z"};
+
+                                for (String fieldName : possibleFieldNames) {
+                                    try {
+                                        playbackStateObj = XposedHelpers.getObjectField(playbackStateCompat, fieldName);
+                                        if (playbackStateObj instanceof PlaybackState) {
+                                            break;
+                                        }
+                                        playbackStateObj = null;
+                                    } catch (NoSuchFieldError ignored) {
+                                        // 字段不存在，静默忽略
+                                    } catch (Exception ignored) {
+                                        logD(TAG, "PlayBackState is null");
+                                        return;
+                                    }
                                 }
+
+                                playbackState = (PlaybackState) playbackStateObj;
+                                updateLyricPosition();
                             }
                         }
                     }
@@ -189,6 +269,7 @@ public class Apple extends BaseLyric {
             if (methodData != null) {
                 lyricConvertClass = classLoader.loadClass(methodData.getDeclaredClassName());
                 lyricConvertMethodName = methodData.getName();
+                logD(TAG, "Found lyric converter class: " + lyricConvertClass.getName());
             }
 
             ClassData stringVectorClass = DexKitUtils.getDexKitBridge().findClass(FindClass.create()
@@ -202,6 +283,7 @@ public class Apple extends BaseLyric {
                 clazz.getConstructor(Context.class, long.class, long.class, long.class,
                         classLoader.loadClass("com.apple.android.mediaservices.javanative.common.StringVector$StringVectorNative"),
                         boolean.class);
+                logD(TAG, "Found StringVector class: " + clazz.getName());
             }
         } catch (Exception e) {
             logE(TAG, "Failed to find lyric classes", e);
@@ -211,8 +293,6 @@ public class Apple extends BaseLyric {
     private void hookPlaybackItemSetId() {
         try {
             Class<?> playbackItemClass = classLoader.loadClass("com.apple.android.music.model.PlaybackItem");
-            Class<?> playerLyricsViewModelClass = classLoader.loadClass("com.apple.android.music.player.viewmodel.PlayerLyricsViewModel");
-            final Constructor<?> viewModelConstructor = playerLyricsViewModelClass.getConstructor(Application.class);
 
             if (existsClass("com.apple.android.music.model.BaseContentItem")) {
                 hookMethod("com.apple.android.music.model.BaseContentItem",
@@ -222,19 +302,30 @@ public class Apple extends BaseLyric {
                             @Override
                             public void after() {
                                 if (playbackItemClass.isInstance(thisObject())) {
+                                    String trackId = (String) getArgs(0);
+                                    if (trackId == null) return;
+
                                     StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
                                     String traceString = getStackTraceString(stackTrace);
 
                                     if (traceString.contains("getItemAtIndex") &&
-                                            (traceString.contains("i7.u.accept") || traceString.contains("e3.h.w") || traceString.contains("k7.t.accept"))) {
-                                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                                            try {
-                                                Object viewModel = viewModelConstructor.newInstance(context);
-                                                callMethod(viewModel, "loadLyrics", thisObject());
-                                            } catch (Exception e) {
-                                                logE(TAG, "Error loading lyrics", e);
-                                            }
-                                        }, 400);
+                                            (traceString.contains("e3.h.w") || //3.10.2
+                                                    traceString.contains("i7.u.accept") ||//4.0.0
+                                                    traceString.contains("k7.t.accept") || // 4.1.0
+                                                    traceString.contains("G4.u.accept") // 4.9.6
+                                            )) {
+
+                                        currentTrackId = trackId;
+                                        playbackItem = thisObject();
+                                        logD(TAG, "Current music ID: " + currentTrackId);
+
+                                        if (!isRequested) {
+                                            isRequested = true;
+                                            mainHandler.postDelayed(() -> {
+                                                requestLyrics();
+                                                mainHandler.postDelayed(() -> isRequested = false, 1000);
+                                            }, 400);
+                                        }
                                     }
                                 }
                             }
@@ -246,6 +337,102 @@ public class Apple extends BaseLyric {
         }
     }
 
+    private void requestLyrics() {
+        try {
+            if (lyricViewModel != null && playbackItem != null) {
+                logD(TAG, "Requesting lyrics via ViewModel");
+                callMethod(lyricViewModel, "loadLyrics", playbackItem);
+            } else {
+                logD(TAG, "Unable to request lyrics - missing ViewModel or PlaybackItem");
+            }
+        } catch (Exception e) {
+            logE(TAG, "Error requesting lyrics", e);
+        }
+    }
+
+    private void updateLyricList() {
+        lyricList.clear();
+        lastShownLyric = null;
+
+        try {
+            if (lyricObject == null || lyricConvertMethodName == null) return;
+
+            int i = 1;
+            while (true) {
+                Object lyricsLinePtr;
+                try {
+                    lyricsLinePtr = callMethod(lyricObject, lyricConvertMethodName, i);
+                    if (lyricsLinePtr == null) break;
+                } catch (Exception e) {
+                    break;
+                }
+
+                Object lyricsLine = callMethod(lyricsLinePtr, "get");
+                if (lyricsLine == null) break;
+
+                String lyric = (String) callMethod(lyricsLine, "getHtmlLineText");
+                Integer start = (Integer) callMethod(lyricsLine, "getBegin");
+                Integer end = (Integer) callMethod(lyricsLine, "getEnd");
+
+                if (lyric != null && start != null && end != null) {
+                    if (!lyricList.isEmpty() && lyricList.getLast().start > start) {
+                        lyricList.clear();
+                    }
+                    lyricList.add(new LyricsLine(start, end, lyric));
+                }
+                i++;
+            }
+
+            logD(TAG, "Loaded " + lyricList.size() + " lyrics lines");
+        } catch (Exception e) {
+            logE(TAG, "Error processing lyrics", e);
+        }
+    }
+
+    private void updateLyricPosition() {
+        if (isRunning) return;
+
+        isRunning = true;
+        lyricHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (!isRunning || playbackState == null) {
+                    isRunning = false;
+                    return;
+                }
+
+                // 暂停状态处理
+                if (playbackState.getState() == PlaybackState.STATE_PAUSED) {
+                    isRunning = false;
+                    return;
+                }
+
+                // 计算当前播放位置
+                long currentPosition = (long) (((SystemClock.elapsedRealtime() -
+                        playbackState.getLastPositionUpdateTime()) *
+                        playbackState.getPlaybackSpeed()) +
+                        playbackState.getPosition());
+
+                // 查找并显示当前歌词
+                LyricsLine currentLine = null;
+                for (LyricsLine line : lyricList) {
+                    if (currentPosition >= line.start && currentPosition < line.end) {
+                        currentLine = line;
+                        break;
+                    }
+                }
+
+                if (currentLine != null && (lastShownLyric == null || lastShownLyric != currentLine)) {
+                    sendLyric(currentLine.lyric);
+                    lastShownLyric = currentLine;
+                }
+
+                // 继续循环
+                lyricHandler.postDelayed(this, 400);
+            }
+        });
+    }
+
     private String getStackTraceString(StackTraceElement[] stackTrace) {
         StringBuilder sb = new StringBuilder();
         for (StackTraceElement element : stackTrace) {
@@ -254,39 +441,4 @@ public class Apple extends BaseLyric {
         return sb.toString();
     }
 
-    private void startTimer() {
-        if (isRunning) return;
-
-        timer = new Timer();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                if (lyricList.isEmpty() || playbackState == null) return;
-                long currentPosition = (long) ((SystemClock.elapsedRealtime() - playbackState.getLastPositionUpdateTime())
-                        * playbackState.getPlaybackSpeed() + playbackState.getPosition());
-
-                for (LyricsLine line : lyricList) {
-                    if (line.start <= currentPosition && line.end >= currentPosition) {
-                        delay = (line.end - line.start);
-                        sendLyric(line.lyric, delay);
-                        break;
-                    }
-                }
-            }
-        }, 0, 400);
-
-        isRunning = true;
-    }
-
-    private void stopTimer() {
-        if (!isRunning) return;
-
-        if (timer != null) {
-            timer.cancel();
-            timer = null;
-        }
-
-        sendStop(null);
-        isRunning = false;
-    }
 }
