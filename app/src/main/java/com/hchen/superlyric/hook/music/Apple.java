@@ -62,7 +62,6 @@ public class Apple extends BaseLyric {
     private final LinkedList<LyricsLine> lyricList = new LinkedList<>();
     private String currentTitle = "";
     private String currentTrackId;
-    private boolean isRequested = false;
     private boolean isRunning = false;
 
     private Handler mainHandler;
@@ -141,9 +140,7 @@ public class Apple extends BaseLyric {
                                         getArgs(0)
                                 );
                                 Object metadataOjb = null;
-                                String[] possibleFieldNames = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k",
-                                        "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v",
-                                        "w", "x", "y", "z"};
+                                String[] possibleFieldNames = {"t", "u", "v", "w", "x", "y", "z"};
 
                                 for (String fieldName : possibleFieldNames) {
                                     try {
@@ -165,19 +162,21 @@ public class Apple extends BaseLyric {
 
                                 // 检测歌曲变化
                                 if (newTitle != null && !currentTitle.equals(newTitle)) {
-                                    currentTitle = newTitle;
-                                    logD(TAG, "Current song title: " + currentTitle);
-
-                                    // 停止歌词
+                                    // 停止现有歌词
                                     sendLyric("");
                                     sendStop(new SuperLyricData().setPackageName(context.getPackageName()));
 
-                                    // 重置状态
+                                    // 重置现有状态
                                     lyricList.clear();
-                                    isRequested = false;
                                     isRunning = false;
                                     lastShownLyric = null;
 
+                                    // 更新当前歌曲名
+                                    currentTitle = newTitle;
+                                    logD(TAG, "Current song title: " + currentTitle);
+
+                                    // 请求当前歌词
+                                    mainHandler.postDelayed(() -> requestLyrics(), 400);
                                 }
                             } catch (Exception e) {
                                 logE(TAG, "Error getting MediaMetadata", e);
@@ -223,9 +222,7 @@ public class Apple extends BaseLyric {
 
                                 // 获取 PlaybackState 对象
                                 Object playbackStateObj = null;
-                                String[] possibleFieldNames = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L",
-                                        "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W",
-                                        "X", "Y", "Z"};
+                                String[] possibleFieldNames = {"D", "E", "F", "G", "H", "I", "J", "K"};
 
                                 for (String fieldName : possibleFieldNames) {
                                     try {
@@ -317,11 +314,6 @@ public class Apple extends BaseLyric {
                                         currentTrackId = trackId;
                                         playbackItem = thisObject();
                                         logD(TAG, "Current music ID: " + currentTrackId);
-
-                                        if (!isRequested) {
-                                            isRequested = true;
-                                            mainHandler.postDelayed(() -> requestLyrics(), 400);
-                                        }
                                     }
                                 }
                             }
