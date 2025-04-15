@@ -307,13 +307,13 @@ public abstract class BaseLyric extends BaseHC {
         }
 
         public static void notificationLyric(BaseLyric baseLyric) {
-            if (existsClass("android.app.NotificationManager")) {
-                hookMethod("android.app.NotificationManager",
-                    "notify",
-                    String.class, int.class, Notification.class,
+            if (existsClass("androidx.media3.common.util.Util")) {
+                hookMethod("androidx.media3.common.util.Util",
+                    "setForegroundServiceNotification",
+                    Service.class, int.class, Notification.class, int.class, String.class,
                     new IHook() {
                         @Override
-                        public void after() {
+                        public void before() {
                             Notification notification = (Notification) getArgs(2);
                             if (notification == null) return;
                             processNotification(baseLyric, notification);
@@ -321,10 +321,24 @@ public abstract class BaseLyric extends BaseHC {
                     }
                 );
             }
-            if (existsClass("androidx.media3.common.util.Util")) {
-                hookMethod("androidx.media3.common.util.Util",
-                    "setForegroundServiceNotification",
-                    Service.class, int.class, Notification.class, int.class, String.class,
+            if (existsClass("androidx.core.app.NotificationManagerCompat")) {
+                hookMethod("androidx.core.app.NotificationManagerCompat",
+                    "notify",
+                    String.class, int.class, Notification.class,
+                    new IHook() {
+                        @Override
+                        public void before() {
+                            Notification notification = (Notification) getArgs(2);
+                            if (notification == null) return;
+                            processNotification(baseLyric, notification);
+                        }
+                    }
+                );
+            }
+            if (existsClass("android.app.NotificationManager")) {
+                hookMethod("android.app.NotificationManager",
+                    "notify",
+                    String.class, int.class, Notification.class,
                     new IHook() {
                         @Override
                         public void before() {
