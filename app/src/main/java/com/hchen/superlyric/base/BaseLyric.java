@@ -294,9 +294,9 @@ public abstract class BaseLyric extends BaseHC {
                 public void before() {
                     try {
                         String key = (String) getArgs(0);
-                        if (Objects.equals(key, "FLAG_ALWAYS_SHOW_TICKER")) {
+                        if (Objects.equals(key, MeiZuNotification.FLAG_ALWAYS_SHOW_TICKER)) {
                             param.setResult(MeiZuNotification.class.getDeclaredField("FLAG_ALWAYS_SHOW_TICKER_HOOK"));
-                        } else if (Objects.equals(key, "FLAG_ONLY_UPDATE_TICKER")) {
+                        } else if (Objects.equals(key, MeiZuNotification.FLAG_ONLY_UPDATE_TICKER)) {
                             param.setResult(MeiZuNotification.class.getDeclaredField("FLAG_ONLY_UPDATE_TICKER_HOOK"));
                         }
                     } catch (Throwable e) {
@@ -338,7 +338,8 @@ public abstract class BaseLyric extends BaseHC {
         }
 
         private static void processNotification(BaseLyric baseLyric, Notification notification) {
-            boolean isLyric = ((notification.flags & 0x01000000) != 0 || (notification.flags & 0x02000000) != 0);
+            boolean isLyric = ((notification.flags & MeiZuNotification.FLAG_ALWAYS_SHOW_TICKER_HOOK) != 0
+                || (notification.flags & MeiZuNotification.FLAG_ONLY_UPDATE_TICKER_HOOK) != 0);
             if (!isLyric) return;
             if (notification.tickerText != null) {
                 baseLyric.sendLyric(notification.tickerText.toString());
