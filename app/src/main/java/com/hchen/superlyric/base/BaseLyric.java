@@ -20,6 +20,7 @@ package com.hchen.superlyric.base;
 
 import android.app.Application;
 import android.app.Notification;
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -305,30 +306,48 @@ public abstract class BaseLyric extends BaseHC {
             };
         }
 
-        public static void notificationLyric(BaseLyric lyric) {
-            hookMethod("android.app.NotificationManager",
-                "notify",
-                String.class, int.class, Notification.class,
-                new IHook() {
-                    @Override
-                    public void after() {
-                        Notification notification = (Notification) getArgs(2);
-                        if (notification == null) return;
-
-                        boolean isLyric = ((notification.flags & 0x01000000) != 0 || (notification.flags & 0x02000000) != 0);
-                        if (isLyric) {
-                            if (notification.tickerText != null) {
-                                lyric.sendLyric(notification.tickerText.toString());
-                            } else {
-                                lyric.sendStop(
-                                    new SuperLyricData()
-                                        .setPackageName(lyric.context.getPackageName())
-                                );
-                            }
+        public static void notificationLyric(BaseLyric baseLyric) {
+            if (existsClass("android.app.NotificationManager")) {
+                hookMethod("android.app.NotificationManager",
+                    "notify",
+                    String.class, int.class, Notification.class,
+                    new IHook() {
+                        @Override
+                        public void after() {
+                            Notification notification = (Notification) getArgs(2);
+                            if (notification == null) return;
+                            processNotification(baseLyric, notification);
                         }
                     }
-                }
-            );
+                );
+            }
+            if (existsClass("androidx.media3.common.util.Util")) {
+                hookMethod("androidx.media3.common.util.Util",
+                    "setForegroundServiceNotification",
+                    Service.class, int.class, Notification.class, int.class, String.class,
+                    new IHook() {
+                        @Override
+                        public void before() {
+                            Notification notification = (Notification) getArgs(2);
+                            if (notification == null) return;
+                            processNotification(baseLyric, notification);
+                        }
+                    }
+                );
+            }
+        }
+
+        private static void processNotification(BaseLyric baseLyric, Notification notification) {
+            boolean isLyric = ((notification.flags & 0x01000000) != 0 || (notification.flags & 0x02000000) != 0);
+            if (!isLyric) return;
+            if (notification.tickerText != null) {
+                baseLyric.sendLyric(notification.tickerText.toString());
+            } else {
+                baseLyric.sendStop(
+                    new SuperLyricData().
+                        setPackageName(baseLyric.context.getPackageName())
+                );
+            }
         }
     }
 

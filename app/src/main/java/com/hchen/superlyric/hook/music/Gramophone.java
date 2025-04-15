@@ -18,11 +18,7 @@
  */
 package com.hchen.superlyric.hook.music;
 
-import android.app.Notification;
-import android.app.Service;
-
 import com.hchen.collect.Collect;
-import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.base.BaseLyric;
 
 /**
@@ -32,23 +28,7 @@ import com.hchen.superlyric.base.BaseLyric;
 public class Gramophone extends BaseLyric {
     @Override
     protected void init() {
-        if (existsClass("androidx.media3.common.util.Util")) {
-            hookMethod("androidx.media3.common.util.Util",
-                    "setForegroundServiceNotification",
-                    Service.class, int.class, Notification.class, int.class, String.class,
-                    new IHook() {
-                        @Override
-                        public void before() {
-                            Notification notification = (Notification) getArgs(2);
-                            if (notification == null || notification.tickerText == null) return;
-
-                            String lyric = notification.tickerText.toString();
-                            if (lyric.isEmpty()) return;
-
-                            sendLyric(lyric);
-                        }
-                    }
-            );
-        }
+        // MockFlyme.mock();
+        MockFlyme.notificationLyric(this);
     }
 }

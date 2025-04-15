@@ -90,160 +90,160 @@ public class Apple extends BaseLyric {
 
         // Hook 歌词构建方法
         hookMethod("com.apple.android.music.player.viewmodel.PlayerLyricsViewModel", "buildTimeRangeToLyricsMap",
-                "com.apple.android.music.ttml.javanative.model.SongInfo$SongInfoPtr",
-                new IHook() {
-                    @Override
-                    public void after() {
-                        Object songInfoPtr = getArgs(0);
-                        if (songInfoPtr == null) return;
+            "com.apple.android.music.ttml.javanative.model.SongInfo$SongInfoPtr",
+            new IHook() {
+                @Override
+                public void after() {
+                    Object songInfoPtr = getArgs(0);
+                    if (songInfoPtr == null) return;
 
-                        currentSongInfo = callMethod(songInfoPtr, "get");
-                        if (currentSongInfo == null || lyricConvertClass == null) return;
+                    currentSongInfo = callMethod(songInfoPtr, "get");
+                    if (currentSongInfo == null || lyricConvertClass == null) return;
 
-                        Object lyricsSectionVector = callMethod(currentSongInfo, "getSections");
-                        if (lyricsSectionVector == null) return;
+                    Object lyricsSectionVector = callMethod(currentSongInfo, "getSections");
+                    if (lyricsSectionVector == null) return;
 
-                        try {
-                            Constructor<?> constructor = lyricConvertClass.getConstructor(lyricsSectionVector.getClass());
-                            lyricObject = constructor.newInstance(lyricsSectionVector);
-                            updateLyricList();
-                        } catch (Exception e) {
-                            logE(TAG, "Error creating lyric converter", e);
-                        }
+                    try {
+                        Constructor<?> constructor = lyricConvertClass.getConstructor(lyricsSectionVector.getClass());
+                        lyricObject = constructor.newInstance(lyricsSectionVector);
+                        updateLyricList();
+                    } catch (Exception e) {
+                        logE(TAG, "Error creating lyric converter", e);
                     }
                 }
+            }
         );
 
         // Hook PlaybackState 构造
         hookAllConstructor("android.media.session.PlaybackState",
-                new IHook() {
-                    @Override
-                    public void after() {
-                        playbackState = (PlaybackState) thisObject();
-                    }
+            new IHook() {
+                @Override
+                public void after() {
+                    playbackState = (PlaybackState) thisObject();
                 }
+            }
         );
 
         // Hook MediaMetadata 变化
         if (existsClass("android.support.v4.media.session.MediaControllerCompat$a$a")) {
             hookMethod("android.support.v4.media.session.MediaControllerCompat$a$a",
-                    "onMetadataChanged",
-                    android.media.MediaMetadata.class,
-                    new IHook() {
-                        @Override
-                        public void before() {
-                            try {
-                                // 获取MediaMetadata实例
-                                Object metadataCompat = callStaticMethod(
-                                        findClass("android.support.v4.media.MediaMetadataCompat"),
-                                        "a",
-                                        getArgs(0)
-                                );
-                                Object metadataOjb = null;
-                                String[] possibleFieldNames = {"t", "u", "v", "w", "x", "y", "z"};
+                "onMetadataChanged",
+                android.media.MediaMetadata.class,
+                new IHook() {
+                    @Override
+                    public void before() {
+                        try {
+                            // 获取MediaMetadata实例
+                            Object metadataCompat = callStaticMethod(
+                                findClass("android.support.v4.media.MediaMetadataCompat"),
+                                "a",
+                                getArgs(0)
+                            );
+                            Object metadataOjb = null;
+                            String[] possibleFieldNames = {"t", "u", "v", "w", "x", "y", "z"};
 
-                                for (String fieldName : possibleFieldNames) {
-                                    try {
-                                        metadataOjb = XposedHelpers.getObjectField(metadataCompat, fieldName);
-                                        if (metadataOjb instanceof MediaMetadata) {
-                                            break;
-                                        }
-                                        metadataOjb = null;
-                                    } catch (NoSuchFieldError ignored) {
-                                        // 字段不存在，静默忽略
-                                    } catch (Exception ignored) {
-                                        logD(TAG, "MediaMetadata is null");
-                                        return;
+                            for (String fieldName : possibleFieldNames) {
+                                try {
+                                    metadataOjb = XposedHelpers.getObjectField(metadataCompat, fieldName);
+                                    if (metadataOjb instanceof MediaMetadata) {
+                                        break;
                                     }
+                                    metadataOjb = null;
+                                } catch (NoSuchFieldError ignored) {
+                                    // 字段不存在，静默忽略
+                                } catch (Exception ignored) {
+                                    logD(TAG, "MediaMetadata is null");
+                                    return;
                                 }
-
-                                MediaMetadata metadata = (MediaMetadata) metadataOjb;
-                                String newTitle = metadata.getString(MediaMetadata.METADATA_KEY_TITLE);
-
-                                // 检测歌曲变化
-                                if (newTitle != null && !currentTitle.equals(newTitle)) {
-                                    // 停止现有歌词
-                                    sendLyric("");
-                                    sendStop(new SuperLyricData().setPackageName(context.getPackageName()));
-
-                                    // 重置现有状态
-                                    lyricList.clear();
-                                    isRunning = false;
-                                    lastShownLyric = null;
-
-                                    // 更新当前歌曲名
-                                    currentTitle = newTitle;
-                                    logD(TAG, "Current song title: " + currentTitle);
-
-                                    // 请求当前歌词
-                                    mainHandler.postDelayed(() -> requestLyrics(), 400);
-                                }
-                            } catch (Exception e) {
-                                logE(TAG, "Error getting MediaMetadata", e);
                             }
+
+                            MediaMetadata metadata = (MediaMetadata) metadataOjb;
+                            String newTitle = metadata.getString(MediaMetadata.METADATA_KEY_TITLE);
+
+                            // 检测歌曲变化
+                            if (newTitle != null && !currentTitle.equals(newTitle)) {
+                                // 停止现有歌词
+                                sendLyric("");
+                                sendStop(new SuperLyricData().setPackageName(context.getPackageName()));
+
+                                // 重置现有状态
+                                lyricList.clear();
+                                isRunning = false;
+                                lastShownLyric = null;
+
+                                // 更新当前歌曲名
+                                currentTitle = newTitle;
+                                logD(TAG, "Current song title: " + currentTitle);
+
+                                // 请求当前歌词
+                                mainHandler.postDelayed(() -> requestLyrics(), 400);
+                            }
+                        } catch (Exception e) {
+                            logE(TAG, "Error getting MediaMetadata", e);
                         }
                     }
+                }
             );
         }
 
         // Hook 初始化 LyricViewModel
         hookMethod("com.apple.android.music.AppleMusicApplication",
-                "onCreate",
-                new IHook() {
-                    @Override
-                    public void after() {
-                        try {
-                            Application application = (Application) thisObject();
-                            Class<?> playerLyricsViewModelClass = findClass("com.apple.android.music.player.viewmodel.PlayerLyricsViewModel");
-                            if (playerLyricsViewModelClass != null) {
-                                Constructor<?> constructor = playerLyricsViewModelClass.getConstructor(Application.class);
-                                lyricViewModel = constructor.newInstance(application);
-                            }
-                        } catch (Exception e) {
-                            logE(TAG, "Failed to initialize LyricViewModel", e);
+            "onCreate",
+            new IHook() {
+                @Override
+                public void after() {
+                    try {
+                        Application application = (Application) thisObject();
+                        Class<?> playerLyricsViewModelClass = findClass("com.apple.android.music.player.viewmodel.PlayerLyricsViewModel");
+                        if (playerLyricsViewModelClass != null) {
+                            Constructor<?> constructor = playerLyricsViewModelClass.getConstructor(Application.class);
+                            lyricViewModel = constructor.newInstance(application);
                         }
+                    } catch (Exception e) {
+                        logE(TAG, "Failed to initialize LyricViewModel", e);
                     }
                 }
+            }
         );
 
         // Hook 播放状态变化
         if (existsClass("android.support.v4.media.session.MediaControllerCompat$a$b")) {
             hookMethod("android.support.v4.media.session.MediaControllerCompat$a$b",
-                    "handleMessage",
-                    android.os.Message.class,
-                    new IHook() {
-                        @Override
-                        public void before() {
-                            Message m = (Message) getArgs(0);
-                            if (m.what == 2) {
-                                // 获取 PlaybackStateCompat 对象
-                                Object playbackStateCompat = m.obj;
-                                if (playbackStateCompat == null) return;
+                "handleMessage",
+                android.os.Message.class,
+                new IHook() {
+                    @Override
+                    public void before() {
+                        Message m = (Message) getArgs(0);
+                        if (m.what == 2) {
+                            // 获取 PlaybackStateCompat 对象
+                            Object playbackStateCompat = m.obj;
+                            if (playbackStateCompat == null) return;
 
-                                // 获取 PlaybackState 对象
-                                Object playbackStateObj = null;
-                                String[] possibleFieldNames = {"D", "E", "F", "G", "H", "I", "J", "K"};
+                            // 获取 PlaybackState 对象
+                            Object playbackStateObj = null;
+                            String[] possibleFieldNames = {"D", "E", "F", "G", "H", "I", "J", "K"};
 
-                                for (String fieldName : possibleFieldNames) {
-                                    try {
-                                        playbackStateObj = XposedHelpers.getObjectField(playbackStateCompat, fieldName);
-                                        if (playbackStateObj instanceof PlaybackState) {
-                                            break;
-                                        }
-                                        playbackStateObj = null;
-                                    } catch (NoSuchFieldError ignored) {
-                                        // 字段不存在，静默忽略
-                                    } catch (Exception ignored) {
-                                        logD(TAG, "PlayBackState is null");
-                                        return;
+                            for (String fieldName : possibleFieldNames) {
+                                try {
+                                    playbackStateObj = XposedHelpers.getObjectField(playbackStateCompat, fieldName);
+                                    if (playbackStateObj instanceof PlaybackState) {
+                                        break;
                                     }
+                                    playbackStateObj = null;
+                                } catch (NoSuchFieldError ignored) {
+                                    // 字段不存在，静默忽略
+                                } catch (Exception ignored) {
+                                    logD(TAG, "PlayBackState is null");
+                                    return;
                                 }
-
-                                playbackState = (PlaybackState) playbackStateObj;
-                                updateLyricPosition();
                             }
+
+                            playbackState = (PlaybackState) playbackStateObj;
+                            updateLyricPosition();
                         }
                     }
+                }
             );
         }
 
@@ -254,12 +254,12 @@ public class Apple extends BaseLyric {
     private void findLyricClasses() {
         try {
             MethodData methodData = DexKitUtils.getDexKitBridge().findMethod(FindMethod.create()
-                    .matcher(MethodMatcher.create()
-                            .returnType("com.apple.android.music.ttml.javanative.model.LyricsLine$LyricsLinePtr")
-                            .paramCount(1)
-                            .paramTypes("int")
-                            .usingNumbers(0)
-                    )
+                .matcher(MethodMatcher.create()
+                    .returnType("com.apple.android.music.ttml.javanative.model.LyricsLine$LyricsLinePtr")
+                    .paramCount(1)
+                    .paramTypes("int")
+                    .usingNumbers(0)
+                )
             ).singleOrNull();
 
             if (methodData != null) {
@@ -269,16 +269,16 @@ public class Apple extends BaseLyric {
             }
 
             ClassData stringVectorClass = DexKitUtils.getDexKitBridge().findClass(FindClass.create()
-                    .matcher(ClassMatcher.create()
-                            .usingStrings("No Internet, Unable to get the SongInfo instance.")
-                    )
+                .matcher(ClassMatcher.create()
+                    .usingStrings("No Internet, Unable to get the SongInfo instance.")
+                )
             ).singleOrNull();
 
             if (stringVectorClass != null) {
                 Class<?> clazz = classLoader.loadClass(stringVectorClass.getName());
                 clazz.getConstructor(Context.class, long.class, long.class, long.class,
-                        classLoader.loadClass("com.apple.android.mediaservices.javanative.common.StringVector$StringVectorNative"),
-                        boolean.class);
+                    classLoader.loadClass("com.apple.android.mediaservices.javanative.common.StringVector$StringVectorNative"),
+                    boolean.class);
                 logD(TAG, "Found StringVector class: " + clazz.getName());
             }
         } catch (Exception e) {
@@ -292,28 +292,28 @@ public class Apple extends BaseLyric {
 
             if (existsClass("com.apple.android.music.model.BaseContentItem")) {
                 hookMethod("com.apple.android.music.model.BaseContentItem",
-                        "setId",
-                        String.class,
-                        new IHook() {
-                            @Override
-                            public void after() {
-                                if (playbackItemClass.isInstance(thisObject())) {
-                                    String trackId = (String) getArgs(0);
-                                    if (trackId == null) return;
+                    "setId",
+                    String.class,
+                    new IHook() {
+                        @Override
+                        public void after() {
+                            if (playbackItemClass.isInstance(thisObject())) {
+                                String trackId = (String) getArgs(0);
+                                if (trackId == null) return;
 
-                                    StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-                                    String traceString = getStackTraceString(stackTrace);
+                                StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+                                String traceString = getStackTraceString(stackTrace);
 
-                                    if (traceString.contains("getItemAtIndex")
-                                            && traceString.contains(".accept") // 4.0.0+
-                                    ) {
-                                        currentTrackId = trackId;
-                                        playbackItem = thisObject();
-                                        logD(TAG, "Current music ID: " + currentTrackId);
-                                    }
+                                if (traceString.contains("getItemAtIndex")
+                                    && traceString.contains(".accept") // 4.0.0+
+                                ) {
+                                    currentTrackId = trackId;
+                                    playbackItem = thisObject();
+                                    logD(TAG, "Current music ID: " + currentTrackId);
                                 }
                             }
                         }
+                    }
                 );
             }
         } catch (Exception e) {
@@ -392,9 +392,9 @@ public class Apple extends BaseLyric {
 
                 // 计算当前播放位置
                 long currentPosition = (long) (((SystemClock.elapsedRealtime() -
-                        playbackState.getLastPositionUpdateTime()) *
-                        playbackState.getPlaybackSpeed()) +
-                        playbackState.getPosition());
+                    playbackState.getLastPositionUpdateTime()) *
+                    playbackState.getPlaybackSpeed()) +
+                    playbackState.getPosition());
 
                 // 查找并显示当前歌词
                 LyricsLine currentLine = null;
