@@ -40,6 +40,7 @@ import org.luckypray.dexkit.result.FieldData;
 import org.luckypray.dexkit.result.MethodData;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -173,6 +174,38 @@ public class QQMusic extends BaseLyric {
                 }
             }
         );
+
+        ClassData classData1 = DexKitUtils.getDexKitBridge().findClass(FindClass.create()
+            .matcher(ClassMatcher.create()
+                .usingStrings("[addWindowIfNotExist] addView")
+            )
+        ).singleOrNull();
+
+        try {
+            if (classData1 == null) return;
+
+            Method method = null;
+            for (Method m : classData1.getInstance(classLoader).getDeclaredMethods()) {
+                if (m.getParameterCount() == 2 && Objects.equals(m.getParameterTypes()[1], Object.class)) {
+                    method = m;
+                    break;
+                }
+            }
+            if (method == null) return;
+
+            hook(method,
+                new IHook() {
+                    @Override
+                    public void before() {
+                        boolean b = (boolean) getArgs(1);
+                        if (!b)
+                            setResult(null);
+                    }
+                }
+            );
+        } catch (Throwable e) {
+            logE(TAG, e);
+        }
     }
 
     private void updateLyricData(Object mLyric) {
