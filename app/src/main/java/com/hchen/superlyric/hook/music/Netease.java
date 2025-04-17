@@ -29,8 +29,11 @@ import com.hchen.superlyric.base.BaseLyric;
 import com.hchen.superlyric.utils.DexKitUtils;
 
 import org.luckypray.dexkit.query.FindClass;
+import org.luckypray.dexkit.query.FindMethod;
 import org.luckypray.dexkit.query.matchers.ClassMatcher;
+import org.luckypray.dexkit.query.matchers.MethodMatcher;
 import org.luckypray.dexkit.result.ClassData;
+import org.luckypray.dexkit.result.MethodData;
 
 import java.lang.reflect.Method;
 import java.util.Objects;
@@ -74,6 +77,25 @@ public class Netease extends BaseLyric {
                 }
             });
             MockFlyme.notificationLyric(this);
+
+            MethodData methodData = DexKitUtils.getDexKitBridge(classLoader).findMethod(FindMethod.create()
+                .matcher(MethodMatcher.create()
+                    .declaredClass(ClassMatcher.create()
+                        .usingStrings("KEY_SHOW_LOCK_SCREEN_PERMISSION")
+                    )
+                    .usingStrings("KEY_SHOW_LOCK_SCREEN_PERMISSION")
+                )
+            ).singleOrNull();
+
+            try {
+                if (methodData != null) {
+                    hook(methodData.getMethodInstance(classLoader),
+                        returnResult(null)
+                    );
+                }
+            } catch (Throwable e) {
+                logE(TAG, e);
+            }
 
             ClassData classData = DexKitUtils.getDexKitBridge(classLoader).findClass(FindClass.create()
                 .matcher(ClassMatcher.create()
