@@ -56,7 +56,7 @@ android {
         minSdk 30
         targetSdk sdk
         // noinspection HighAppVersionCode
-        versionCode 2025041700
+        versionCode 2025041701
         versionName "1.8"
 
         ndk {

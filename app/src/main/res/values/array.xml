@@ -23,5 +23,8 @@
         <item>com.apple.android.music</item>
         <item>statusbar.finder</item>
         <item>org.akanework.gramophone</item>
+        <item>com.huawei.music</item>
+        <item>cn.wenyu.bodian</item>
+        <item>com.luna.music</item>
     </string-array>
 </resources>
