@@ -101,6 +101,21 @@ public class QQMusic extends BaseLyric {
 
         try {
             Class<?> clazz = methodData.getClassInstance(classLoader);
+            MethodData methodData1 = DexKitUtils.getDexKitBridge().findMethod(FindMethod.create()
+                .matcher(MethodMatcher.create()
+                    .declaredClass(clazz)
+                    .usingStrings("showLyricTipsView operateLyric:false")
+                )
+            ).singleOrThrow(() -> new Throwable("Failed to find visibility 1 method!!"));
+            hook(methodData1.getMethodInstance(classLoader),
+                new IHook() {
+                    @Override
+                    public void after() {
+                        lyricDataList.clear();
+                    }
+                }
+            );
+
             Field viewField = null;
             for (Field field : clazz.getDeclaredFields()) {
                 if (Objects.equals(field.getType(), View.class)) {
@@ -198,8 +213,7 @@ public class QQMusic extends BaseLyric {
                     @Override
                     public void before() {
                         boolean b = (boolean) getArgs(1);
-                        if (!b)
-                            setResult(null);
+                        if (!b) setResult(null);
                     }
                 }
             );
