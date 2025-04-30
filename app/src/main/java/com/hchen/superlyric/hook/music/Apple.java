@@ -94,7 +94,7 @@ public class Apple extends BaseLyric {
             new IHook() {
                 @Override
                 public void after() {
-                    Object songInfoPtr = getArgs(0);
+                    Object songInfoPtr = getArg(0);
                     if (songInfoPtr == null) return;
 
                     currentSongInfo = callMethod(songInfoPtr, "get");
@@ -137,7 +137,7 @@ public class Apple extends BaseLyric {
                             Object metadataCompat = callStaticMethod(
                                 findClass("android.support.v4.media.MediaMetadataCompat"),
                                 "a",
-                                getArgs(0)
+                                getArg(0)
                             );
                             Object metadataOjb = null;
                             String[] possibleFieldNames = {"t", "u", "v", "w", "x", "y", "z"};
@@ -214,7 +214,7 @@ public class Apple extends BaseLyric {
                 new IHook() {
                     @Override
                     public void before() {
-                        Message m = (Message) getArgs(0);
+                        Message m = (Message) getArg(0);
                         if (m.what == 2) {
                             // 获取 PlaybackStateCompat 对象
                             Object playbackStateCompat = m.obj;
@@ -298,7 +298,7 @@ public class Apple extends BaseLyric {
                         @Override
                         public void after() {
                             if (playbackItemClass.isInstance(thisObject())) {
-                                String trackId = (String) getArgs(0);
+                                String trackId = (String) getArg(0);
                                 if (trackId == null) return;
 
                                 StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();

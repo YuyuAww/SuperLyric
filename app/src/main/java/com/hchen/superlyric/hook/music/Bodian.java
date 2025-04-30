@@ -21,6 +21,8 @@ package com.hchen.superlyric.hook.music;
 import android.content.Context;
 import android.view.View;
 
+import androidx.annotation.NonNull;
+
 import com.hchen.collect.Collect;
 import com.hchen.hooktool.HCInit;
 import com.hchen.hooktool.hook.IHook;
@@ -45,8 +47,8 @@ public class Bodian extends BaseLyric {
     }
 
     @Override
-    protected void onApplicationAfter(Context context) {
-        super.onApplicationAfter(context);
+    protected void onApplication(@NonNull Context context) {
+        super.onApplication(context);
         HCInit.setClassLoader(context.getClassLoader());
 
         Class<?> deskLyricViewClass = findClass("cn.kuwo.player.util.DeskLyricView");
@@ -67,7 +69,7 @@ public class Bodian extends BaseLyric {
                 new IHook() {
                     @Override
                     public void before() {
-                        String lyric = (String) getArgs(0);
+                        String lyric = (String) getArg(0);
                         sendLyric(lyric);
                     }
                 }
@@ -83,7 +85,7 @@ public class Bodian extends BaseLyric {
             new IHook() {
                 @Override
                 public void before() {
-                    String key = (String) getArgs(0);
+                    String key = (String) getArg(0);
                     if (Objects.equals(key, "isShow"))
                         setResult(true);
                 }

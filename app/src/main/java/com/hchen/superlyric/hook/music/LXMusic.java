@@ -90,7 +90,7 @@ public class LXMusic extends BaseLyric {
                     hook(lyricMethod, new IHook() {
                         @Override
                         public void before() {
-                            String lyric = (String) getArgs(0);
+                            String lyric = (String) getArg(0);
                             if (lyric.isEmpty()) return;
 
                             sendLyric(lyric);
@@ -108,7 +108,7 @@ public class LXMusic extends BaseLyric {
             new IHook() {
                 @Override
                 public void after() {
-                    Object view = getArgs(0);
+                    Object view = getArg(0);
                     if (view == null) return;
                     if (view.getClass().getName().contains("cn.toside.music.mobile.lyric")) {
                         callMethod(view, "setVisibility", View.GONE);

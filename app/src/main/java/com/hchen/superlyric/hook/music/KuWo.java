@@ -20,10 +20,12 @@ package com.hchen.superlyric.hook.music;
 
 import android.content.Context;
 
+import androidx.annotation.NonNull;
+
 import com.hchen.collect.Collect;
 import com.hchen.hooktool.HCInit;
+import com.hchen.hooktool.callback.IMemberFilter;
 import com.hchen.hooktool.hook.IHook;
-import com.hchen.hooktool.tool.itool.IMemberFilter;
 import com.hchen.superlyric.base.BaseLyric;
 import com.hchen.superlyric.utils.DexKitUtils;
 
@@ -45,8 +47,8 @@ public class KuWo extends BaseLyric {
     }
 
     @Override
-    protected void onApplicationAfter(Context context) {
-        super.onApplicationAfter(context);
+    protected void onApplication(@NonNull Context context) {
+        super.onApplication(context);
 
         HCInit.setClassLoader(context.getClassLoader());
 
@@ -56,7 +58,7 @@ public class KuWo extends BaseLyric {
                 new IHook() {
                     @Override
                     public void after() {
-                        String lyric = (String) getArgs(0);
+                        String lyric = (String) getArg(0);
                         if (lyric == null || lyric.isEmpty()) return;
 
                         Timeout.start(KuWo.this);
@@ -70,7 +72,7 @@ public class KuWo extends BaseLyric {
 
             hook(filterMethod(confMMKVMgrImplClass, new IMemberFilter<Method>() {
                     @Override
-                    public boolean test(Method member) {
+                    public boolean test(@NonNull Method member) {
                         return Objects.equals(member.getReturnType(), boolean.class) &&
                             member.getParameterCount() == 3 &&
                             Arrays.equals(member.getParameterTypes(), new Class<?>[]{String.class, String.class, boolean.class});
@@ -79,7 +81,7 @@ public class KuWo extends BaseLyric {
                 new IHook() {
                     @Override
                     public void before() {
-                        String key = (String) getArgs(1);
+                        String key = (String) getArg(1);
                         if (Objects.equals(key, "bluetooth_car_lyric"))
                             setResult(true);
                     }
@@ -101,14 +103,14 @@ public class KuWo extends BaseLyric {
                 Class<?> clazz = classData.getInstance(classLoader);
                 hook(filterMethod(clazz, new IMemberFilter<Method>() {
                         @Override
-                        public boolean test(Method member) {
+                        public boolean test(@NonNull Method member) {
                             return member.getParameterCount() == 1 && Objects.equals(member.getParameterTypes()[0], String.class);
                         }
                     })[0],
                     new IHook() {
                         @Override
                         public void before() {
-                            String lyric = (String) getArgs(0);
+                            String lyric = (String) getArg(0);
                             if (lyric == null || lyric.isEmpty()) return;
 
                             Timeout.start(KuWo.this);

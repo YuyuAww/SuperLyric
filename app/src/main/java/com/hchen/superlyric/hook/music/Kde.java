@@ -20,6 +20,8 @@ package com.hchen.superlyric.hook.music;
 
 import android.content.Context;
 
+import androidx.annotation.NonNull;
+
 import com.hchen.collect.Collect;
 import com.hchen.superlyric.base.BaseLyric;
 
@@ -30,8 +32,8 @@ public class Kde extends BaseLyric {
     }
 
     @Override
-    protected void onApplicationAfter(Context context) {
-        super.onApplicationAfter(context);
+    protected void onApplication(@NonNull Context context) {
+        super.onApplication(context);
 
         mediaMetadataCompatLyric();
     }

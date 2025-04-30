@@ -34,7 +34,7 @@ import android.os.RemoteException;
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 
-import com.hchen.hooktool.BaseHC;
+import com.hchen.hooktool.HCBase;
 import com.hchen.hooktool.HCInit;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyricapi.ISuperLyricDistributor;
@@ -49,7 +49,7 @@ import java.util.TimerTask;
  *
  * @author 焕晨HChen
  */
-public abstract class BaseLyric extends BaseHC {
+public abstract class BaseLyric extends HCBase {
     private ISuperLyricDistributor iSuperLyricDistributor;
     public static AudioManager audioManager;
     public long versionCode = -1L;
@@ -57,13 +57,8 @@ public abstract class BaseLyric extends BaseHC {
 
     @Override
     @CallSuper
-    protected void onApplicationAfter(Context context) {
-        if (!enabled()) return;
-
-        if (context == null) {
-            logW(TAG, "Failed to get context!!");
-            return;
-        }
+    protected void onApplication(@NonNull Context context) {
+        if (!isEnabled()) return;
 
         this.context = context;
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
@@ -106,7 +101,7 @@ public abstract class BaseLyric extends BaseHC {
                 @Override
                 public void after() {
                     Intent intent = (Intent) getResult();
-                    Application application = (Application) getArgs(0);
+                    Application application = (Application) getArg(0);
                     int code = intent.getIntExtra("intent_return_code", -2);
                     if (code == 0) {
                         HCInit.setClassLoader(application.getClassLoader());
@@ -136,8 +131,8 @@ public abstract class BaseLyric extends BaseHC {
                 new IHook() {
                     @Override
                     public void after() {
-                        if (Objects.equals("android.media.metadata.TITLE", getArgs(0))) {
-                            String lyric = (String) getArgs(1);
+                        if (Objects.equals("android.media.metadata.TITLE", getArg(0))) {
+                            String lyric = (String) getArg(1);
                             if (lyric == null) return;
                             sendLyric(lyric);
                         }
@@ -293,14 +288,13 @@ public abstract class BaseLyric extends BaseHC {
                 @Override
                 public void before() {
                     try {
-                        String key = (String) getArgs(0);
+                        String key = (String) getArg(0);
                         if (Objects.equals(key, MeiZuNotification.FLAG_ALWAYS_SHOW_TICKER)) {
                             param.setResult(MeiZuNotification.class.getDeclaredField("FLAG_ALWAYS_SHOW_TICKER_HOOK"));
                         } else if (Objects.equals(key, MeiZuNotification.FLAG_ONLY_UPDATE_TICKER)) {
                             param.setResult(MeiZuNotification.class.getDeclaredField("FLAG_ONLY_UPDATE_TICKER_HOOK"));
                         }
-                    } catch (Throwable e) {
-                        logE(TAG, e);
+                    } catch (Throwable ignore) {
                     }
                 }
             };
@@ -314,7 +308,7 @@ public abstract class BaseLyric extends BaseHC {
                     new IHook() {
                         @Override
                         public void before() {
-                            Notification notification = (Notification) getArgs(2);
+                            Notification notification = (Notification) getArg(2);
                             if (notification == null) return;
                             processNotification(baseLyric, notification);
                         }
@@ -328,7 +322,7 @@ public abstract class BaseLyric extends BaseHC {
                     new IHook() {
                         @Override
                         public void before() {
-                            Notification notification = (Notification) getArgs(2);
+                            Notification notification = (Notification) getArg(2);
                             if (notification == null) return;
                             processNotification(baseLyric, notification);
                         }
@@ -342,7 +336,7 @@ public abstract class BaseLyric extends BaseHC {
                     new IHook() {
                         @Override
                         public void before() {
-                            Notification notification = (Notification) getArgs(2);
+                            Notification notification = (Notification) getArg(2);
                             if (notification == null) return;
                             processNotification(baseLyric, notification);
                         }
@@ -383,7 +377,7 @@ public abstract class BaseLyric extends BaseHC {
                 new IHook() {
                     @Override
                     public void before() {
-                        String lyric = (String) getArgs(1);
+                        String lyric = (String) getArg(1);
                         if (lyric == null || lyric.isEmpty()) return;
                         if (Objects.equals(lyric, "NEED_NOT_UPDATE_TITLE")) return;
 

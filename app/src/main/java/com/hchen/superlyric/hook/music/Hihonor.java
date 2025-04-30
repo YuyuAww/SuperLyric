@@ -22,6 +22,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 
+import androidx.annotation.NonNull;
+
 import com.hchen.collect.Collect;
 import com.hchen.hooktool.HCInit;
 import com.hchen.hooktool.hook.IHook;
@@ -52,8 +54,8 @@ public class Hihonor extends BaseLyric {
                 new IHook() {
                     @Override
                     public void before() {
-                        if (Objects.equals("com.netease.nis.wrapper.MyApplication", getArgs(1))) {
-                            setArgs(1, "com.netease.cloudmusic.CloudMusicApplication");
+                        if (Objects.equals("com.netease.nis.wrapper.MyApplication", getArg(1))) {
+                            setArg(1, "com.netease.cloudmusic.CloudMusicApplication");
                             logD(TAG, "Hooked netease wrapper class");
                         }
                     }
@@ -63,8 +65,8 @@ public class Hihonor extends BaseLyric {
     }
 
     @Override
-    protected void onApplicationAfter(Context context) {
-        super.onApplicationAfter(context);
+    protected void onApplication(@NonNull Context context) {
+        super.onApplication(context);
         HCInit.setClassLoader(context.getClassLoader());
         onTinker();
 
@@ -111,7 +113,7 @@ public class Hihonor extends BaseLyric {
                         hook(method, new IHook() {
                             @Override
                             public void before() {
-                                setArgs(0, true);
+                                setArg(0, true);
                             }
                         });
                     } else if (method.getReturnType().equals(SharedPreferences.class)) {

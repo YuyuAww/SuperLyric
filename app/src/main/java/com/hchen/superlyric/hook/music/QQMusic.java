@@ -155,7 +155,7 @@ public class QQMusic extends BaseLyric {
                 new IHook() {
                     @Override
                     public void before() {
-                        String key = (String) getArgs(0);
+                        String key = (String) getArg(0);
                         if (Objects.equals(key, "KEY_STATUS_BAR_LYRIC_SWITCH")) {
                             setResult(1);
                         }
@@ -212,7 +212,7 @@ public class QQMusic extends BaseLyric {
                 new IHook() {
                     @Override
                     public void before() {
-                        boolean b = (boolean) getArgs(1);
+                        boolean b = (boolean) getArg(1);
                         if (!b) setResult(null);
                     }
                 }

@@ -50,7 +50,7 @@ public class Qishui extends BaseLyric {
                 @Override
                 public void after() {
                     if (mTargetView.contains(thisObject().getClass().getSimpleName())) {
-                        sendLyric((String) getArgs(0));
+                        sendLyric((String) getArg(0));
                     }
                 }
             }

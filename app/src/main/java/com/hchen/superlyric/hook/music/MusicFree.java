@@ -35,7 +35,7 @@ public class MusicFree extends BaseLyric {
             new IHook() {
                 @Override
                 public void before() {
-                    Object promise = getArgs(2);
+                    Object promise = getArg(2);
                     callMethod(promise, "resolve", true);
                     returnNull();
                 }
@@ -47,7 +47,7 @@ public class MusicFree extends BaseLyric {
             String.class, "com.facebook.react.bridge.Promise", new IHook() {
                 @Override
                 public void before() {
-                    String lyric = (String) getArgs(0);
+                    String lyric = (String) getArg(0);
                     if (lyric.isEmpty()) return;
 
                     Timeout.start(MusicFree.this);

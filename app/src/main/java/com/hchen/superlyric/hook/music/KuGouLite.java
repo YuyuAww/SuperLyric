@@ -21,6 +21,8 @@ package com.hchen.superlyric.hook.music;
 import android.content.Context;
 import android.content.Intent;
 
+import androidx.annotation.NonNull;
+
 import com.hchen.collect.Collect;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.base.BaseLyric;
@@ -48,12 +50,12 @@ public class KuGouLite extends BaseLyric {
     }
 
     @Override
-    protected void onApplicationAfter(Context context) {
-        super.onApplicationAfter(context);
+    protected void onApplication(@NonNull Context context) {
+        super.onApplication(context);
 
         try {
             // long code = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).getLongVersionCode();
-            if (!Objects.equals(lpparam.processName, "com.kugou.android.lite.support")) {
+            if (!Objects.equals(loadPackageParam.processName, "com.kugou.android.lite.support")) {
                 if (!enableStatusBarLyric()) return;
 
                 if (versionCode <= 10935)
@@ -100,7 +102,7 @@ public class KuGouLite extends BaseLyric {
             new IHook() {
                 @Override
                 public void before() {
-                    Intent intent = (Intent) getArgs(0);
+                    Intent intent = (Intent) getArg(0);
                     if (intent == null) return;
 
                     String action = intent.getAction();

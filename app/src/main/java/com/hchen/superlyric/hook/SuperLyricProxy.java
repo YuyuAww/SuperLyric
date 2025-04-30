@@ -25,7 +25,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 
 import com.hchen.collect.Collect;
-import com.hchen.hooktool.BaseHC;
+import com.hchen.hooktool.HCBase;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.binder.SuperLyricControllerService;
 import com.hchen.superlyric.binder.SuperLyricService;
@@ -42,7 +42,7 @@ import java.util.Optional;
  * @author 焕晨HChen
  */
 @Collect(targetPackage = "android", onApplication = false)
-public class SuperLyricProxy extends BaseHC {
+public class SuperLyricProxy extends HCBase {
     private static SuperLyricService mSuperLyricService;
     private static SuperLyricControllerService mSuperLyricControllerService;
 
@@ -103,7 +103,7 @@ public class SuperLyricProxy extends BaseHC {
                     Intent intent = (Intent) getResult();
                     if (intent == null) return;
 
-                    String callerPackage = (String) getArgs(1);
+                    String callerPackage = (String) getArg(1);
                     // if (!CollectMap.getAllPackageSet().contains(callerPackage)
                     //     && !SuperLyricService.mExemptSet.contains(callerPackage)
                     // ) return;
@@ -165,7 +165,7 @@ public class SuperLyricProxy extends BaseHC {
                 @Override
                 public void before() {
                     if (mSuperLyricService == null) return;
-                    if (!(getArgs(2) instanceof Intent intent)) return;
+                    if (!(getArg(2) instanceof Intent intent)) return;
                     if (!Objects.equals(intent.getAction(), "Super_Lyric")) return;
 
                     String addPackage = intent.getStringExtra("super_lyric_add_package");
@@ -230,7 +230,7 @@ public class SuperLyricProxy extends BaseHC {
                 public void after() {
                     if (mSuperLyricService == null) return;
 
-                    Object app = getArgs(0);
+                    Object app = getArg(0);
                     boolean isKilled = (boolean) Optional.ofNullable(
                         callMethod(app, "isKilled")
                     ).orElse(true);

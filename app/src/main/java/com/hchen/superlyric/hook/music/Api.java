@@ -31,7 +31,7 @@ import com.hchen.superlyricapi.SuperLyricData;
  */
 public class Api extends BaseLyric {
     @Override
-    protected boolean enabled() {
+    protected boolean isEnabled() {
         return existsClass("com.hchen.superlyricapi.SuperLyricTool");
     }
 
@@ -45,7 +45,7 @@ public class Api extends BaseLyric {
             new IHook() {
                 @Override
                 public void after() {
-                    Parcel parcel = (Parcel) callMethod(getArgs(0), "marshall");
+                    Parcel parcel = (Parcel) callMethod(getArg(0), "marshall");
                     if (parcel != null) {
                         sendStop(SuperLyricData.unmarshall(parcel));
                     }
@@ -59,7 +59,7 @@ public class Api extends BaseLyric {
             new IHook() {
                 @Override
                 public void after() {
-                    Parcel parcel = (Parcel) callMethod(getArgs(0), "marshall");
+                    Parcel parcel = (Parcel) callMethod(getArg(0), "marshall");
                     if (parcel != null) {
                         sendSuperLyricData(SuperLyricData.unmarshall(parcel));
                     }

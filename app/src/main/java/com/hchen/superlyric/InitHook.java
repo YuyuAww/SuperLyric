@@ -21,8 +21,10 @@ package com.hchen.superlyric;
 import static com.hchen.hooktool.HCInit.LOG_D;
 import static com.hchen.hooktool.HCInit.LOG_I;
 
+import androidx.annotation.NonNull;
+
 import com.hchen.collect.CollectMap;
-import com.hchen.hooktool.BaseHC;
+import com.hchen.hooktool.HCBase;
 import com.hchen.hooktool.HCEntrance;
 import com.hchen.hooktool.HCInit;
 import com.hchen.hooktool.log.XposedLog;
@@ -43,8 +45,9 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  */
 public class InitHook extends HCEntrance {
     private static final String TAG = "SuperLyric";
-    private static final HashMap<String, BaseHC> mCacheBaseHCMap = new HashMap<>();
+    private static final HashMap<String, HCBase> mCacheBaseHCMap = new HashMap<>();
 
+    @NonNull
     @Override
     public HCInit.BasicData initHC(HCInit.BasicData basicData) {
         return basicData.setTag(TAG)
@@ -55,6 +58,7 @@ public class InitHook extends HCEntrance {
             });
     }
 
+    @NonNull
     @Override
     public String[] ignorePackageNameList() {
         return new String[]{
@@ -70,7 +74,7 @@ public class InitHook extends HCEntrance {
         mCacheBaseHCMap.clear();
         if (!CollectMap.getAllPackageSet().contains(lpparam.packageName)) {
             HCInit.initLoadPackageParam(lpparam);
-            new Api().onApplicationCreate().onLoadPackage();
+            new Api().onApplication().onLoadPackage();
             return;
         }
 
@@ -82,9 +86,9 @@ public class InitHook extends HCEntrance {
                     try {
                         HCInit.initLoadPackageParam(lpparam);
                         Class<?> clazz = getClass().getClassLoader().loadClass(fullClass);
-                        BaseHC baseHC = (BaseHC) clazz.getDeclaredConstructor().newInstance();
-                        baseHC.onApplicationCreate();
-                        mCacheBaseHCMap.put(fullClass, baseHC);
+                        HCBase hcBase = (HCBase) clazz.getDeclaredConstructor().newInstance();
+                        hcBase.onApplication();
+                        mCacheBaseHCMap.put(fullClass, hcBase);
                     } catch (Throwable ex) {
                         XposedLog.logE(TAG, "Failed to load class: " + fullClass, ex);
                     }
@@ -96,14 +100,14 @@ public class InitHook extends HCEntrance {
                 public void accept(String fullClass) {
                     try {
                         if (mCacheBaseHCMap.get(fullClass) != null) {
-                            BaseHC baseHC = mCacheBaseHCMap.get(fullClass);
-                            assert baseHC != null;
-                            baseHC.onLoadPackage();
+                            HCBase hcBase = mCacheBaseHCMap.get(fullClass);
+                            assert hcBase != null;
+                            hcBase.onLoadPackage();
                         } else {
                             HCInit.initLoadPackageParam(lpparam);
                             Class<?> clazz = getClass().getClassLoader().loadClass(fullClass);
-                            BaseHC baseHC = (BaseHC) clazz.getDeclaredConstructor().newInstance();
-                            baseHC.onLoadPackage();
+                            HCBase hcBase = (HCBase) clazz.getDeclaredConstructor().newInstance();
+                            hcBase.onLoadPackage();
                         }
                     } catch (Throwable ex) {
                         XposedLog.logE(TAG, "Failed to load class: " + fullClass, ex);
@@ -118,7 +122,7 @@ public class InitHook extends HCEntrance {
     }
 
     @Override
-    public void onInitZygote(StartupParam startupParam) throws Throwable {
+    public void onInitZygote(@NonNull StartupParam startupParam) throws Throwable {
         CollectMap.getOnZygoteList().values().forEach(new Consumer<List<String>>() {
             @Override
             public void accept(List<String> fullClassList) {
@@ -127,8 +131,8 @@ public class InitHook extends HCEntrance {
                     public void accept(String fullClass) {
                         try {
                             Class<?> hookClass = getClass().getClassLoader().loadClass(fullClass);
-                            BaseHC baseHC = (BaseHC) hookClass.getDeclaredConstructor().newInstance();
-                            baseHC.onZygote();
+                            HCBase hcBase = (HCBase) hookClass.getDeclaredConstructor().newInstance();
+                            hcBase.onZygote();
                         } catch (ClassNotFoundException | NoSuchMethodException |
                                  IllegalAccessException | InstantiationException |
                                  InvocationTargetException e) {
