@@ -19,7 +19,7 @@
 package com.hchen.superlyric.hook.music;
 
 import com.hchen.collect.Collect;
-import com.hchen.superlyric.base.BaseLyric;
+import com.hchen.superlyric.hook.BaseLyric;
 
 @Collect(targetPackage = "cn.aqzscn.stream_music")
 public class Aqzscn extends BaseLyric {

@@ -25,7 +25,7 @@ import androidx.annotation.NonNull;
 
 import com.hchen.collect.Collect;
 import com.hchen.hooktool.hook.IHook;
-import com.hchen.superlyric.base.BaseLyric;
+import com.hchen.superlyric.hook.BaseLyric;
 import com.hchen.superlyric.utils.DexKitUtils;
 
 import org.luckypray.dexkit.query.FindMethod;

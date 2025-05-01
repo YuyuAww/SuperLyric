@@ -50,12 +50,13 @@ public class InitHook extends HCEntrance {
     @NonNull
     @Override
     public HCInit.BasicData initHC(HCInit.BasicData basicData) {
-        return basicData.setTag(TAG)
+        return basicData
+            .setTag(TAG)
+            .setPrefsName("super_lyric_prefs")
             .setLogLevel(BuildConfig.DEBUG ? LOG_D : LOG_I)
             .setModulePackageName(BuildConfig.APPLICATION_ID)
-            .setLogExpandPath(new String[]{
-                "com.hchen.superlyric.hook"
-            });
+            .setLogExpandPath("com.hchen.superlyric.hook")
+            .setLogExpandIgnoreClassNames("BaseLyric");
     }
 
     @NonNull
@@ -70,21 +71,21 @@ public class InitHook extends HCEntrance {
     }
 
     @Override
-    public void onLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
+    public void onLoadPackage(@NonNull XC_LoadPackage.LoadPackageParam loadPackageParam) throws Throwable {
         mCacheBaseHCMap.clear();
-        if (!CollectMap.getAllPackageSet().contains(lpparam.packageName)) {
-            HCInit.initLoadPackageParam(lpparam);
+        if (!CollectMap.getAllPackageSet().contains(loadPackageParam.packageName)) {
+            HCInit.initLoadPackageParam(loadPackageParam);
             new Api().onApplication().onLoadPackage();
             return;
         }
 
         try {
-            DexKitUtils.init(lpparam, TAG);
-            CollectMap.getOnLoadPackageList(lpparam.packageName).forEach(new Consumer<String>() {
+            DexKitUtils.init(loadPackageParam);
+            CollectMap.getOnLoadPackageList(loadPackageParam.packageName).forEach(new Consumer<String>() {
                 @Override
                 public void accept(String fullClass) {
                     try {
-                        HCInit.initLoadPackageParam(lpparam);
+                        HCInit.initLoadPackageParam(loadPackageParam);
                         Class<?> clazz = getClass().getClassLoader().loadClass(fullClass);
                         HCBase hcBase = (HCBase) clazz.getDeclaredConstructor().newInstance();
                         hcBase.onApplication();
@@ -95,7 +96,7 @@ public class InitHook extends HCEntrance {
                 }
             });
 
-            CollectMap.getOnLoadPackageList(lpparam.packageName).forEach(new Consumer<String>() {
+            CollectMap.getOnLoadPackageList(loadPackageParam.packageName).forEach(new Consumer<String>() {
                 @Override
                 public void accept(String fullClass) {
                     try {
@@ -104,7 +105,7 @@ public class InitHook extends HCEntrance {
                             assert hcBase != null;
                             hcBase.onLoadPackage();
                         } else {
-                            HCInit.initLoadPackageParam(lpparam);
+                            HCInit.initLoadPackageParam(loadPackageParam);
                             Class<?> clazz = getClass().getClassLoader().loadClass(fullClass);
                             HCBase hcBase = (HCBase) clazz.getDeclaredConstructor().newInstance();
                             hcBase.onLoadPackage();

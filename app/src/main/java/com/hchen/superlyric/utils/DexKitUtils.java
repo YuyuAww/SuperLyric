@@ -28,14 +28,13 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  * @author 焕晨HChen
  */
 public class DexKitUtils {
-    private static String TAG;
+    private static final String TAG = "SuperLyric";
     private static boolean isInit = false;
     private static XC_LoadPackage.LoadPackageParam mLoadPackageParam;
     private static DexKitBridge mDexKitBridge;
 
-    public static void init(XC_LoadPackage.LoadPackageParam loadPackageParam, String tag) {
+    public static void init(XC_LoadPackage.LoadPackageParam loadPackageParam) {
         mLoadPackageParam = loadPackageParam;
-        TAG = tag;
         isInit = false;
     }
 
@@ -49,9 +48,9 @@ public class DexKitUtils {
 
     private static void initDexKit() {
         if (mDexKitBridge != null) return;
-        String hostDir = mLoadPackageParam.appInfo.sourceDir;
 
         System.loadLibrary("dexkit");
+        String hostDir = mLoadPackageParam.appInfo.sourceDir;
         mDexKitBridge = DexKitBridge.create(hostDir);
         isInit = true;
     }
@@ -61,7 +60,7 @@ public class DexKitUtils {
             initDexKit(classLoader);
 
         if (mDexKitBridge == null)
-            throw new RuntimeException(TAG + ": mDexKitBridge is null!!");
+            throw new RuntimeException("[SuperLyric]: mDexKitBridge is null!!");
         return mDexKitBridge;
     }
 
@@ -70,7 +69,7 @@ public class DexKitUtils {
             initDexKit();
 
         if (mDexKitBridge == null)
-            throw new RuntimeException(TAG + ": mDexKitBridge is null!!");
+            throw new RuntimeException("[SuperLyric]: mDexKitBridge is null!!");
         return mDexKitBridge;
     }
 

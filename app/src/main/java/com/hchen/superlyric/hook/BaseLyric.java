@@ -16,7 +16,7 @@
 
  * Copyright (C) 2023-2025 HChenX
  */
-package com.hchen.superlyric.base;
+package com.hchen.superlyric.hook;
 
 import android.app.Application;
 import android.app.Notification;
@@ -170,7 +170,7 @@ public abstract class BaseLyric extends HCBase {
         logD(TAG, delay != 0 ? "Lyric: " + lyric + ", Delay: " + delay : "Lyric: " + lyric);
     }
 
-    public void sendStop(SuperLyricData data) {
+    public void sendStop(@NonNull SuperLyricData data) {
         if (iSuperLyricDistributor == null) return;
 
         try {
@@ -182,7 +182,7 @@ public abstract class BaseLyric extends HCBase {
         logD(TAG, "Stop");
     }
 
-    public void sendSuperLyricData(SuperLyricData data) {
+    public void sendSuperLyricData(@NonNull SuperLyricData data) {
         if (iSuperLyricDistributor == null) return;
 
         try {
@@ -194,8 +194,7 @@ public abstract class BaseLyric extends HCBase {
         logD(TAG, "SuperLyricData: " + data);
     }
 
-    public void sendMediaMetaData(MediaMetadata metadata) {
-        if (metadata == null) return;
+    public void sendMediaMetaData(@NonNull MediaMetadata metadata) {
         if (iSuperLyricDistributor == null) return;
 
         try {

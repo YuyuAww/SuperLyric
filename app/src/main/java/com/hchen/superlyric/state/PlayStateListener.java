@@ -69,8 +69,9 @@ public class PlayStateListener {
         if (SuperLyricService.mSelfControlSet.contains(controller.getPackageName()))
             return; // 不监听自我控制的应用
 
-        if (mCallbackHashMap.get(controller) != null) {
-            controller.unregisterCallback(mCallbackHashMap.get(controller));
+        MediaControllerCallback callback = mCallbackHashMap.get(controller);
+        if (callback != null) {
+            controller.unregisterCallback(callback);
             mCallbackHashMap.remove(controller);
         }
 

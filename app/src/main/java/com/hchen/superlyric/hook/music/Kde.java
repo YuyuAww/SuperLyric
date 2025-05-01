@@ -23,7 +23,7 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 
 import com.hchen.collect.Collect;
-import com.hchen.superlyric.base.BaseLyric;
+import com.hchen.superlyric.hook.BaseLyric;
 
 @Collect(targetPackage = "org.kde.kdeconnect_tp")
 public class Kde extends BaseLyric {
