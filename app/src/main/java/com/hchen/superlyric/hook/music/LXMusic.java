@@ -25,7 +25,6 @@ import android.view.ViewGroup;
 import com.hchen.collect.Collect;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.hook.BaseLyric;
-import com.hchen.superlyricapi.SuperLyricData;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -48,10 +47,7 @@ public class LXMusic extends BaseLyric {
             new IHook() {
                 @Override
                 public void after() {
-                    sendStop(
-                        new SuperLyricData()
-                            .setPackageName(context.getPackageName())
-                    );
+                    sendStop();
                 }
             }
         );

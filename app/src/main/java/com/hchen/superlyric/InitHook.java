@@ -49,7 +49,7 @@ public class InitHook extends HCEntrance {
 
     @NonNull
     @Override
-    public HCInit.BasicData initHC(HCInit.BasicData basicData) {
+    public HCInit.BasicData initHC(@NonNull HCInit.BasicData basicData) {
         return basicData
             .setTag(TAG)
             .setPrefsName("super_lyric_prefs")
@@ -116,7 +116,7 @@ public class InitHook extends HCEntrance {
                 }
             });
         } catch (Throwable e) {
-            XposedLog.logE(TAG, "Error: ", e);
+            XposedLog.logE(TAG, "InitHook error: ", e);
         } finally {
             DexKitUtils.close();
         }

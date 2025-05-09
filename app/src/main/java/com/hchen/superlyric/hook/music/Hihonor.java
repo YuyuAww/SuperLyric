@@ -68,7 +68,7 @@ public class Hihonor extends BaseLyric {
     protected void onApplication(@NonNull Context context) {
         super.onApplication(context);
         HCInit.setClassLoader(context.getClassLoader());
-        onTinker();
+        hookTencentTinker();
 
         MockFlyme.mock(new IHook() {
             @Override
@@ -76,7 +76,7 @@ public class Hihonor extends BaseLyric {
                 setStaticField(Build.class, "DISPLAY", "Flyme");
             }
         });
-        MockFlyme.notificationLyric(this);
+        MockFlyme.getFlymeNotificationLyric();
 
         MethodData methodData = DexKitUtils.getDexKitBridge(classLoader).findMethod(FindMethod.create()
             .matcher(MethodMatcher.create()

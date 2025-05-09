@@ -61,7 +61,7 @@ public class KuWo extends BaseLyric {
                         String lyric = (String) getArg(0);
                         if (lyric == null || lyric.isEmpty()) return;
 
-                        Timeout.start(KuWo.this);
+                        Timeout.start();
                         sendLyric(lyric);
                     }
                 }
@@ -113,7 +113,7 @@ public class KuWo extends BaseLyric {
                             String lyric = (String) getArg(0);
                             if (lyric == null || lyric.isEmpty()) return;
 
-                            Timeout.start(KuWo.this);
+                            Timeout.start();
                             sendLyric(lyric);
                         }
                     }

@@ -27,6 +27,7 @@ import android.media.session.PlaybackState;
 import android.os.RemoteException;
 import android.service.notification.NotificationListenerService;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.hchen.superlyric.binder.SuperLyricService;
@@ -50,6 +51,7 @@ public class PlayStateListener {
         if (controllers == null) return;
 
         mCallbackHashMap.forEach(MediaController::unregisterCallback);
+        mCallbackHashMap.clear();
         controllers.forEach(this::registerMediaControllerCallback);
     };
 
@@ -65,7 +67,7 @@ public class PlayStateListener {
         mMediaSessionManager.addOnActiveSessionsChangedListener(mListener, new ComponentName(mContext, NotificationListenerService.class));
     }
 
-    private void registerMediaControllerCallback(MediaController controller) {
+    private void registerMediaControllerCallback(@NonNull MediaController controller) {
         if (SuperLyricService.mSelfControlSet.contains(controller.getPackageName()))
             return; // 不监听自我控制的应用
 

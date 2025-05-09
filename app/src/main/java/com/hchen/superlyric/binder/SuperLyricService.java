@@ -21,6 +21,8 @@ package com.hchen.superlyric.binder;
 import android.os.IBinder;
 import android.os.RemoteException;
 
+import androidx.annotation.NonNull;
+
 import com.hchen.hooktool.log.AndroidLog;
 import com.hchen.superlyricapi.ISuperLyric;
 import com.hchen.superlyricapi.ISuperLyricDistributor;
@@ -38,13 +40,13 @@ import java.util.function.Predicate;
  * @author 焕晨HChen
  */
 public class SuperLyricService extends ISuperLyricDistributor.Stub {
-    private static final String TAG = "SuperLyric";
+    private static final String TAG = "SuperLyricService";
     private static final CopyOnWriteArrayList<ISuperLyric> mISuperLyricList = new CopyOnWriteArrayList<>();
     private final static ConcurrentHashMap<IBinder, ISuperLyric> mIBinder2ISuperLyricMap = new ConcurrentHashMap<>();
     public static final CopyOnWriteArraySet<String> mExemptSet = new CopyOnWriteArraySet<>();
     public static final CopyOnWriteArraySet<String> mSelfControlSet = new CopyOnWriteArraySet<>();
 
-    public void addSuperLyricBinder(IBinder iBinder, ISuperLyric iSuperLyric) {
+    public void addSuperLyricBinder(@NonNull IBinder iBinder, @NonNull ISuperLyric iSuperLyric) {
         try {
             if (mIBinder2ISuperLyricMap.get(iBinder) == null) {
                 mISuperLyricList.add(iSuperLyric);
@@ -55,12 +57,7 @@ public class SuperLyricService extends ISuperLyricDistributor.Stub {
         }
     }
 
-    public void addSelfControlPackage(String packageName) {
-        if (packageName == null || packageName.isEmpty()) return;
-        mSelfControlSet.add(packageName);
-    }
-
-    public void removeSuperLyricBinder(IBinder iBinder) {
+    public void removeSuperLyricBinder(@NonNull IBinder iBinder) {
         try {
             if (mIBinder2ISuperLyricMap.get(iBinder) != null) {
                 ISuperLyric iSuperLyric = mIBinder2ISuperLyricMap.get(iBinder);
@@ -79,24 +76,14 @@ public class SuperLyricService extends ISuperLyricDistributor.Stub {
         }
     }
 
+    public void addSelfControlPackage(String packageName) {
+        if (packageName == null || packageName.isEmpty()) return;
+        mSelfControlSet.add(packageName);
+    }
+
     public void removeSelfControlPackage(String packageName) {
         if (packageName == null || packageName.isEmpty()) return;
         mSelfControlSet.remove(packageName);
-    }
-
-    @Override
-    public void onStop(SuperLyricData data) throws RemoteException {
-        for (ISuperLyric superLyric : mISuperLyricList) {
-            try {
-                superLyric.onStop(data);
-            } catch (Throwable e) {
-                try {
-                    mISuperLyricList.remove(superLyric);
-                } catch (Throwable ignore) {
-                }
-                AndroidLog.logE(TAG, "[onStop]: Will remove: " + superLyric, e);
-            }
-        }
     }
 
     @Override
@@ -109,7 +96,22 @@ public class SuperLyricService extends ISuperLyricDistributor.Stub {
                     mISuperLyricList.remove(superLyric);
                 } catch (Throwable ignore) {
                 }
-                AndroidLog.logE(TAG, "[onSuperLyric]: Will remove: " + superLyric, e);
+                AndroidLog.logE(TAG, "[onSuperLyric]: Will remove binder: " + superLyric, e);
+            }
+        }
+    }
+
+    @Override
+    public void onStop(SuperLyricData data) throws RemoteException {
+        for (ISuperLyric superLyric : mISuperLyricList) {
+            try {
+                superLyric.onStop(data);
+            } catch (Throwable e) {
+                try {
+                    mISuperLyricList.remove(superLyric);
+                } catch (Throwable ignore) {
+                }
+                AndroidLog.logE(TAG, "[onStop]: Will remove binder: " + superLyric, e);
             }
         }
     }
@@ -117,10 +119,9 @@ public class SuperLyricService extends ISuperLyricDistributor.Stub {
     public void addExemptPackage(String packageName) {
         try {
             if (packageName == null || packageName.isEmpty()) return;
-
             mExemptSet.add(packageName);
         } catch (Throwable e) {
-            AndroidLog.logE(TAG, "[onExempt]: Error!", e);
+            AndroidLog.logE(TAG, "[onExempt]: Error to add exempt package:", e);
         }
     }
 

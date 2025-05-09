@@ -45,7 +45,7 @@ public class KuGouLite extends BaseLyric {
 
     @Override
     protected void init() {
-        onTinker();
+        hookTencentTinker();
         // openBluetoothA2dp();
     }
 

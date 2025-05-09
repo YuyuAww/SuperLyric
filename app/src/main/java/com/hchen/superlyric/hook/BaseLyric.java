@@ -26,7 +26,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
-import android.media.MediaMetadata;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.RemoteException;
@@ -50,22 +49,23 @@ import java.util.TimerTask;
  * @author 焕晨HChen
  */
 public abstract class BaseLyric extends HCBase {
-    private ISuperLyricDistributor iSuperLyricDistributor;
+    private static BaseLyric staticBaseLyric; // 静态实例
     public static AudioManager audioManager;
+    private ISuperLyricDistributor iSuperLyricDistributor;
     public long versionCode = -1L;
-    public Context context;
+    private String packageName;
 
     @Override
     @CallSuper
     protected void onApplication(@NonNull Context context) {
         if (!isEnabled()) return;
-
-        this.context = context;
+        staticBaseLyric = this;
+        packageName = context.getPackageName();
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 
         Intent intent = new Intent("Super_Lyric");
-        intent.putExtra("super_lyric_add_package", this.context.getPackageName());
-        this.context.sendBroadcast(intent);
+        intent.putExtra("super_lyric_add_package", packageName);
+        context.sendBroadcast(intent);
 
         Intent intentBinder = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
         if (intentBinder == null) {
@@ -84,15 +84,18 @@ public abstract class BaseLyric extends HCBase {
         );
 
         try {
-            versionCode = this.context.getPackageManager().getPackageInfo(this.context.getPackageName(), 0).getLongVersionCode();
+            versionCode = context.getPackageManager().getPackageInfo(packageName, 0).getLongVersionCode();
         } catch (PackageManager.NameNotFoundException e) {
-            logW(TAG, "Failed to get package: [" + this.context.getPackageName() + "] version code!!");
+            logW(TAG, "Failed to get package: [" + packageName + "] version code!!");
         }
 
         logD(TAG, "Success get binder: " + iSuperLyricDistributor);
     }
 
-    public void onTinker() {
+    /**
+     * Hook 热更新服务，用于更改当前 classloader
+     */
+    public void hookTencentTinker() {
         if (!existsClass("com.tencent.tinker.loader.TinkerLoader")) return;
 
         hookMethod("com.tencent.tinker.loader.TinkerLoader",
@@ -111,6 +114,9 @@ public abstract class BaseLyric extends HCBase {
         );
     }
 
+    /**
+     * 模拟连接蓝牙
+     */
     public void openBluetoothA2dp() {
         hookMethod("android.media.AudioManager",
             "isBluetoothA2dpOn",
@@ -123,6 +129,9 @@ public abstract class BaseLyric extends HCBase {
         );
     }
 
+    /**
+     * 获取 MediaMetadataCompat 中的歌词数据
+     */
     public void mediaMetadataCompatLyric() {
         if (existsClass("android.support.v4.media.MediaMetadataCompat$Builder")) {
             hookMethod("android.support.v4.media.MediaMetadataCompat$Builder",
@@ -144,11 +153,20 @@ public abstract class BaseLyric extends HCBase {
 
     private String lastLyric;
 
+    /**
+     * 发送歌词
+     * @param lyric 歌词
+     */
     public void sendLyric(String lyric) {
         sendLyric(lyric, 0);
     }
 
-    public void sendLyric(String lyric, Integer delay) {
+    /**
+     * 发送歌词和当前歌词的持续时间 (ms)
+     * @param lyric 歌词
+     * @param delay 歌词持续时间 (ms)
+     */
+    public void sendLyric(String lyric, int delay) {
         if (lyric == null) return;
         if (iSuperLyricDistributor == null) return;
 
@@ -159,7 +177,7 @@ public abstract class BaseLyric extends HCBase {
             lastLyric = lyric;
 
             iSuperLyricDistributor.onSuperLyric(new SuperLyricData()
-                .setPackageName(context.getPackageName())
+                .setPackageName(packageName)
                 .setLyric(lyric)
                 .setDelay(delay)
             );
@@ -170,6 +188,28 @@ public abstract class BaseLyric extends HCBase {
         logD(TAG, delay != 0 ? "Lyric: " + lyric + ", Delay: " + delay : "Lyric: " + lyric);
     }
 
+    /**
+     * 发送播放状态暂停
+     */
+    public void sendStop() {
+        sendStop(packageName);
+    }
+
+    /**
+     * 发送播放状态暂停
+     * @param packageName 暂停播放的音乐软件包名
+     */
+    public void sendStop(String packageName) {
+        sendStop(
+            new SuperLyricData()
+                .setPackageName(packageName)
+        );
+    }
+
+    /**
+     * 发送播放状态暂停
+     * @param data 数据
+     */
     public void sendStop(@NonNull SuperLyricData data) {
         if (iSuperLyricDistributor == null) return;
 
@@ -182,6 +222,10 @@ public abstract class BaseLyric extends HCBase {
         logD(TAG, "Stop");
     }
 
+    /**
+     * 发送数据包
+     * @param data 数据
+     */
     public void sendSuperLyricData(@NonNull SuperLyricData data) {
         if (iSuperLyricDistributor == null) return;
 
@@ -194,27 +238,14 @@ public abstract class BaseLyric extends HCBase {
         logD(TAG, "SuperLyricData: " + data);
     }
 
-    public void sendMediaMetaData(@NonNull MediaMetadata metadata) {
-        if (iSuperLyricDistributor == null) return;
-
-        try {
-            iSuperLyricDistributor.onSuperLyric(
-                new SuperLyricData()
-                    .setPackageName(context.getPackageName())
-                    .setMediaMetadata(metadata)
-            );
-        } catch (RemoteException e) {
-            logE(TAG, "sendMediaMetaData: ", e);
-        }
-
-        logD(TAG, "MediaMetadata: " + metadata);
-    }
-
+    /**
+     * 超时检查，超时自动发送暂停状态
+     */
     public static class Timeout {
         private static Timer timer = new Timer();
         private static boolean isRunning = false;
 
-        public static void start(BaseLyric lyric) {
+        public static void start() {
             if (isRunning) return;
 
             timer = new Timer();
@@ -222,10 +253,7 @@ public abstract class BaseLyric extends HCBase {
                 @Override
                 public void run() {
                     if (audioManager != null && !audioManager.isMusicActive()) {
-                        lyric.sendStop(
-                            new SuperLyricData()
-                                .setPackageName(lyric.context.getPackageName())
-                        );
+                        staticBaseLyric.sendStop();
                         stop();
                     }
                 }
@@ -242,6 +270,9 @@ public abstract class BaseLyric extends HCBase {
         }
     }
 
+    /**
+     * 模拟为魅族设备，用于开启魅族状态栏功能
+     */
     public static class MockFlyme {
         private static class MeiZuNotification extends Notification {
             public static final int FLAG_ALWAYS_SHOW_TICKER_HOOK = 0x01000000;
@@ -250,6 +281,9 @@ public abstract class BaseLyric extends HCBase {
             public static final String FLAG_ONLY_UPDATE_TICKER = "FLAG_ONLY_UPDATE_TICKER";
         }
 
+        /**
+         * 启动模拟
+         */
         public static void mock() {
             hookMethod("java.lang.Class", "getField", String.class, createHook());
             hookMethod("java.lang.Class", "getDeclaredField", String.class, createHook());
@@ -271,6 +305,10 @@ public abstract class BaseLyric extends HCBase {
             );
         }
 
+        /**
+         * 启动模拟
+         * @param iHook 自定义内容
+         */
         public static void mock(@NonNull IHook iHook) {
             hookMethod("java.lang.Class", "getField", String.class, createHook());
             hookMethod("java.lang.Class", "getDeclaredField", String.class, createHook());
@@ -299,7 +337,7 @@ public abstract class BaseLyric extends HCBase {
             };
         }
 
-        public static void notificationLyric(BaseLyric baseLyric) {
+        public static void getFlymeNotificationLyric() {
             if (existsClass("androidx.media3.common.util.Util")) {
                 hookMethod("androidx.media3.common.util.Util",
                     "setForegroundServiceNotification",
@@ -309,7 +347,7 @@ public abstract class BaseLyric extends HCBase {
                         public void before() {
                             Notification notification = (Notification) getArg(2);
                             if (notification == null) return;
-                            processNotification(baseLyric, notification);
+                            processNotification(notification);
                         }
                     }
                 );
@@ -323,7 +361,7 @@ public abstract class BaseLyric extends HCBase {
                         public void before() {
                             Notification notification = (Notification) getArg(2);
                             if (notification == null) return;
-                            processNotification(baseLyric, notification);
+                            processNotification(notification);
                         }
                     }
                 );
@@ -337,34 +375,39 @@ public abstract class BaseLyric extends HCBase {
                         public void before() {
                             Notification notification = (Notification) getArg(2);
                             if (notification == null) return;
-                            processNotification(baseLyric, notification);
+                            processNotification(notification);
                         }
                     }
                 );
             }
         }
 
-        private static void processNotification(BaseLyric baseLyric, Notification notification) {
+        private static void processNotification(Notification notification) {
             boolean isLyric = ((notification.flags & MeiZuNotification.FLAG_ALWAYS_SHOW_TICKER_HOOK) != 0
                 || (notification.flags & MeiZuNotification.FLAG_ONLY_UPDATE_TICKER_HOOK) != 0);
             if (!isLyric) return;
             if (notification.tickerText != null) {
-                baseLyric.sendLyric(notification.tickerText.toString());
+                staticBaseLyric.sendLyric(notification.tickerText.toString());
             } else {
-                baseLyric.sendStop(
-                    new SuperLyricData().
-                        setPackageName(baseLyric.context.getPackageName())
-                );
+                staticBaseLyric.sendStop();
             }
         }
     }
 
+    /**
+     * 获取 QQLite 歌词
+     */
     public static class QQLite {
+        /**
+         * 是否支持 QQLite
+         */
         public static boolean isQQLite() {
             return existsClass("com.tencent.qqmusic.core.song.SongInfo");
         }
 
-        public static void init(BaseLyric baseLyric) {
+        public static void init() {
+            if (!isQQLite()) return;
+
             hookMethod("com.tencent.qqmusiccommon.util.music.RemoteLyricController",
                 "BluetoothA2DPConnected",
                 returnResult(true)
@@ -380,7 +423,7 @@ public abstract class BaseLyric extends HCBase {
                         if (lyric == null || lyric.isEmpty()) return;
                         if (Objects.equals(lyric, "NEED_NOT_UPDATE_TITLE")) return;
 
-                        baseLyric.sendLyric(lyric);
+                        staticBaseLyric.sendLyric(lyric);
                     }
                 }
             );

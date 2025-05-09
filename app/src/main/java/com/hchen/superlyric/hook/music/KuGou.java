@@ -44,7 +44,7 @@ import kotlin.jvm.functions.Function0;
 public class KuGou extends BaseLyric {
     @Override
     protected void init() {
-        onTinker();
+        hookTencentTinker();
         // openBluetoothA2dp();
     }
 

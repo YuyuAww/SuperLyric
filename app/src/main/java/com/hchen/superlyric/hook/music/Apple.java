@@ -32,7 +32,6 @@ import com.hchen.collect.Collect;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.hook.BaseLyric;
 import com.hchen.superlyric.utils.DexKitUtils;
-import com.hchen.superlyricapi.SuperLyricData;
 
 import org.luckypray.dexkit.query.FindClass;
 import org.luckypray.dexkit.query.FindMethod;
@@ -164,7 +163,7 @@ public class Apple extends BaseLyric {
                             if (newTitle != null && !currentTitle.equals(newTitle)) {
                                 // 停止现有歌词
                                 sendLyric("");
-                                sendStop(new SuperLyricData().setPackageName(context.getPackageName()));
+                                sendStop();
 
                                 // 重置现有状态
                                 lyricList.clear();

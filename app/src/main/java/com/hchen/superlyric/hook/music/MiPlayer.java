@@ -28,6 +28,7 @@ import com.hchen.superlyric.hook.BaseLyric;
 public class MiPlayer extends BaseLyric {
     @Override
     protected void init() {
-        if (QQLite.isQQLite()) QQLite.init(this);
+        if (QQLite.isQQLite())
+            QQLite.init();
     }
 }

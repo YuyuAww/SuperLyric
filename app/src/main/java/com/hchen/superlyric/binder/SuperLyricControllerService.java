@@ -41,7 +41,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * @author 焕晨HChen
  */
 public class SuperLyricControllerService {
-    private static final String TAG = "SuperLyric";
+    private static final String TAG = "SuperLyricControllerService";
     private static SuperLyricService mSuperLyricService;
     public static final CopyOnWriteArraySet<String> mFinalExemptSet = new CopyOnWriteArraySet<>();
     private static final Messenger mMessengerService = new Messenger(new ControllerHandler(Looper.getMainLooper()));
@@ -60,7 +60,8 @@ public class SuperLyricControllerService {
         @Override
         public void handleMessage(@NonNull Message msg) {
             Bundle obj = msg.getData();
-            if (obj == null) return;
+            Messenger client = msg.replyTo;
+            if (obj == null || client == null) return;
 
             String packageName = obj.getString("super_lyric_controller_package");
             if (packageName == null || packageName.isEmpty()) return;
@@ -68,17 +69,19 @@ public class SuperLyricControllerService {
 
             ISuperLyric.Stub superLyric = null;
             if (mPackageName2ISuperLyricStubMap.containsKey(packageName)) {
-                superLyric = mPackageName2ISuperLyricStubMap.get(packageName);
-                if (superLyric == null)
-                    mPackageName2ISuperLyricStubMap.remove(packageName);
-                else if (!superLyric.isBinderAlive()) {
+                try {
+                    superLyric = mPackageName2ISuperLyricStubMap.get(packageName);
+                    if (superLyric == null)
+                        mPackageName2ISuperLyricStubMap.remove(packageName);
+                    else if (!superLyric.isBinderAlive()) {
+                        mPackageName2ISuperLyricStubMap.remove(packageName);
+                        superLyric = null;
+                    }
+                } catch (Throwable ignore) {
                     mPackageName2ISuperLyricStubMap.remove(packageName);
                     superLyric = null;
                 }
             }
-
-            Messenger client = msg.replyTo;
-            if (client == null) return;
 
             try {
                 if (superLyric == null) {
@@ -93,24 +96,13 @@ public class SuperLyricControllerService {
 
                 AndroidLog.logD(TAG, "Callback client: " + client + ", controller: " + superLyric + ", packageName: " + packageName);
             } catch (RemoteException e) {
-                AndroidLog.logE(TAG, "[SuperLyricControllerService]: Failed to send binder message!!", e);
+                AndroidLog.logE(TAG, "Failed to send binder message!!", e);
             }
         }
     }
 
     private static ISuperLyric.Stub createSuperLyricStub() {
         return new ISuperLyric.Stub() {
-            @Override
-            public void onStop(SuperLyricData superLyricData) throws RemoteException {
-                if (!mPackageName2ISuperLyricStubMap.containsValue(this)) return;
-
-                try {
-                    mSuperLyricService.onStop(superLyricData);
-                } catch (Throwable e) {
-                    AndroidLog.logE(TAG, "[onStop]: Error!!", e);
-                }
-            }
-
             @Override
             public void onSuperLyric(SuperLyricData superLyricData) throws RemoteException {
                 if (!mPackageName2ISuperLyricStubMap.containsValue(this)) return;
@@ -121,10 +113,21 @@ public class SuperLyricControllerService {
                     AndroidLog.logE(TAG, "[onSuperLyric]: Error!!", e);
                 }
             }
+
+            @Override
+            public void onStop(SuperLyricData superLyricData) throws RemoteException {
+                if (!mPackageName2ISuperLyricStubMap.containsValue(this)) return;
+
+                try {
+                    mSuperLyricService.onStop(superLyricData);
+                } catch (Throwable e) {
+                    AndroidLog.logE(TAG, "[onStop]: Error!!", e);
+                }
+            }
         };
     }
 
-    public void removeSuperLyricStubIfNeed(String packageName) {
+    public void removeSuperLyricStubIfNeed(@NonNull String packageName) {
         mPackageName2ISuperLyricStubMap.remove(packageName);
     }
 

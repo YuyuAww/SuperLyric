@@ -26,6 +26,6 @@ public class Aqzscn extends BaseLyric {
     @Override
     protected void init() {
         MockFlyme.mock();
-        MockFlyme.notificationLyric(this);
+        MockFlyme.getFlymeNotificationLyric();
     }
 }

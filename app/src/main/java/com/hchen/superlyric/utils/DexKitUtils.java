@@ -28,7 +28,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  * @author 焕晨HChen
  */
 public class DexKitUtils {
-    private static final String TAG = "SuperLyric";
+    private static final String TAG = "DexKitUtils";
     private static boolean isInit = false;
     private static XC_LoadPackage.LoadPackageParam mLoadPackageParam;
     private static DexKitBridge mDexKitBridge;

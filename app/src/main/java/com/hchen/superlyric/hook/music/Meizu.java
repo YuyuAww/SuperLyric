@@ -26,10 +26,10 @@ public class Meizu extends BaseLyric {
     @Override
     protected void init() {
         if (QQLite.isQQLite())
-            QQLite.init(this);
+            QQLite.init();
         else {
             MockFlyme.mock();
-            MockFlyme.notificationLyric(this);
+            MockFlyme.getFlymeNotificationLyric();
         }
     }
 }
