@@ -21,13 +21,14 @@
 #-renamesourcefileattribute SourceFile
 
 -keep class com.hchen.superlyric.InitHook
+-keep class * extends com.hchen.hooktool.HCBase
 -keep class com.hchen.superlyric.hook.**
 -keep class com.hchen.superlyric.hook.**$*
--keep class com.hchen.superlyric.base.BaseLyric$MockFlyme$MeiZuNotification {*;}
+-keep class com.hchen.superlyric.hook.BaseLyric$MockFlyme$MeiZuNotification {*;}
 -keep class  com.hchen.hooktool.HCState {
-        static boolean isEnabled;
-        static java.lang.String mFramework;
-        static int  mVersion;
+        static boolean isXposedEnabled;
+        static java.lang.String framework;
+        static int  version;
  }
 -keep class * implements android.os.Parcelable {
         public static ** CREATOR;
