@@ -133,7 +133,7 @@ public class Netease extends BaseLyric {
                 logE(TAG, "Failed to hook status bar lyric!!");
             }
         } else {
-            mediaMetadataCompatLyric();
+            getMediaMetadataCompatLyric();
         }
     }
 }

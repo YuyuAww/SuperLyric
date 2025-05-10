@@ -93,7 +93,6 @@ public class LXMusic extends BaseLyric {
                         }
                     });
                 }
-
             }
         }
 

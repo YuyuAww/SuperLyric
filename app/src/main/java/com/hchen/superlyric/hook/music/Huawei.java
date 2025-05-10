@@ -46,7 +46,7 @@ public class Huawei extends BaseLyric {
             new IHook() {
                 @Override
                 public void before() {
-                    Object[] lyric = param.args;
+                    Object[] lyric = getArgs();
                     String lyricWithoutBrackets = Arrays.toString(lyric).substring(1, Arrays.toString(lyric).length() - 1);
                     sendLyric(lyricWithoutBrackets);
                 }

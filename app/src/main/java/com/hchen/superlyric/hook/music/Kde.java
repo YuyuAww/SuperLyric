@@ -18,23 +18,16 @@
  */
 package com.hchen.superlyric.hook.music;
 
-import android.content.Context;
-
-import androidx.annotation.NonNull;
-
 import com.hchen.collect.Collect;
 import com.hchen.superlyric.hook.BaseLyric;
 
+/**
+ * Kde
+ */
 @Collect(targetPackage = "org.kde.kdeconnect_tp")
 public class Kde extends BaseLyric {
     @Override
     protected void init() {
-    }
-
-    @Override
-    protected void onApplication(@NonNull Context context) {
-        super.onApplication(context);
-
-        mediaMetadataCompatLyric();
+        getMediaMetadataCompatLyric();
     }
 }

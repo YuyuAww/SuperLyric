@@ -44,7 +44,8 @@ public class MusicFree extends BaseLyric {
 
         hookMethod("fun.upup.musicfree.lyricUtil.LyricUtilModule",
             "setStatusBarLyricText",
-            String.class, "com.facebook.react.bridge.Promise", new IHook() {
+            String.class, "com.facebook.react.bridge.Promise",
+            new IHook() {
                 @Override
                 public void before() {
                     String lyric = (String) getArg(0);

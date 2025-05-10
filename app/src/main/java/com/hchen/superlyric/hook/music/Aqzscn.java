@@ -21,6 +21,9 @@ package com.hchen.superlyric.hook.music;
 import com.hchen.collect.Collect;
 import com.hchen.superlyric.hook.BaseLyric;
 
+/**
+ * Aqzscn
+ */
 @Collect(targetPackage = "cn.aqzscn.stream_music")
 public class Aqzscn extends BaseLyric {
     @Override

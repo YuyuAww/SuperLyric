@@ -21,6 +21,9 @@ package com.hchen.superlyric.hook.music;
 import com.hchen.collect.Collect;
 import com.hchen.superlyric.hook.BaseLyric;
 
+/**
+ * LMusic
+ */
 @Collect(targetPackage = "com.lalilu.lmusic")
 public class LMusic extends BaseLyric {
     @Override

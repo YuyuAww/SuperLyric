@@ -21,6 +21,9 @@ package com.hchen.superlyric.hook.music;
 import com.hchen.collect.Collect;
 import com.hchen.superlyric.hook.BaseLyric;
 
+/**
+ * MobileMusic
+ */
 @Collect(targetPackage = "cmccwm.mobilemusic")
 public class MobileMusic extends BaseLyric {
     @Override

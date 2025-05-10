@@ -21,6 +21,9 @@ package com.hchen.superlyric.hook.music;
 import com.hchen.collect.Collect;
 import com.hchen.superlyric.hook.BaseLyric;
 
+/**
+ * 魅族音乐
+ */
 @Collect(targetPackage = "com.meizu.media.music")
 public class Meizu extends BaseLyric {
     @Override

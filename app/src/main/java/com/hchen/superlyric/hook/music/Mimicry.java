@@ -21,6 +21,9 @@ package com.hchen.superlyric.hook.music;
 import com.hchen.collect.Collect;
 import com.hchen.superlyric.hook.BaseLyric;
 
+/**
+ * Mimicry
+ */
 @Collect(targetPackage = "com.mimicry.mymusic")
 public class Mimicry extends BaseLyric {
     @Override

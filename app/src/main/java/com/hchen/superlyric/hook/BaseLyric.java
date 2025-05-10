@@ -132,7 +132,7 @@ public abstract class BaseLyric extends HCBase {
     /**
      * 获取 MediaMetadataCompat 中的歌词数据
      */
-    public void mediaMetadataCompatLyric() {
+    public void getMediaMetadataCompatLyric() {
         if (existsClass("android.support.v4.media.MediaMetadataCompat$Builder")) {
             hookMethod("android.support.v4.media.MediaMetadataCompat$Builder",
                 "putString",
