@@ -28,7 +28,6 @@ import com.hchen.superlyric.hook.BaseLyric;
 public class SaltMusic extends BaseLyric {
     @Override
     protected void init() {
-        // MockFlyme.mock();
-        MockFlyme.getFlymeNotificationLyric();
+        FlymeHelper.getFlymeNotificationLyric();
     }
 }

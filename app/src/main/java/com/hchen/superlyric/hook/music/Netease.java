@@ -72,13 +72,13 @@ public class Netease extends BaseLyric {
         hookTencentTinker();
 
         if (versionCode >= 8000041) {
-            MockFlyme.mock(new IHook() {
+            FlymeHelper.mockDevice(new IHook() {
                 @Override
                 public void after() {
                     setStaticField(Build.class, "DISPLAY", "Flyme");
                 }
             });
-            MockFlyme.getFlymeNotificationLyric();
+            FlymeHelper.getFlymeNotificationLyric();
 
             MethodData methodData = DexKitUtils.getDexKitBridge(classLoader).findMethod(FindMethod.create()
                 .matcher(MethodMatcher.create()

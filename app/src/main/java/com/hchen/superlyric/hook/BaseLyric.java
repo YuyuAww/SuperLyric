@@ -50,10 +50,10 @@ import java.util.TimerTask;
  */
 public abstract class BaseLyric extends HCBase {
     private static BaseLyric staticBaseLyric; // 静态实例
+    private static ISuperLyricDistributor iSuperLyricDistributor;
     public static AudioManager audioManager;
-    private ISuperLyricDistributor iSuperLyricDistributor;
-    public long versionCode = -1L;
-    private String packageName;
+    public static String packageName;
+    public static long versionCode = -1L;
 
     @Override
     @CallSuper
@@ -68,20 +68,12 @@ public abstract class BaseLyric extends HCBase {
         context.sendBroadcast(intent);
 
         Intent intentBinder = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-        if (intentBinder == null) {
-            logW(TAG, "Failed to get intent!!");
-            return;
-        }
+        Objects.requireNonNull(intentBinder, "Failed to get designated binder intent, can't use SuperLyric!!");
 
         Bundle bundle = intentBinder.getBundleExtra("super_lyric_info");
-        if (bundle == null) {
-            logW(TAG, "Failed to get bundle!!");
-            return;
-        }
+        Objects.requireNonNull(bundle, "Failed to get designated binder bundle, please try reboot system!!");
 
-        iSuperLyricDistributor = ISuperLyricDistributor.Stub.asInterface(
-            bundle.getBinder("super_lyric_binder")
-        );
+        iSuperLyricDistributor = ISuperLyricDistributor.Stub.asInterface(bundle.getBinder("super_lyric_binder"));
 
         try {
             versionCode = context.getPackageManager().getPackageInfo(packageName, 0).getLongVersionCode();
@@ -96,8 +88,6 @@ public abstract class BaseLyric extends HCBase {
      * Hook 热更新服务，用于更改当前 classloader
      */
     public void hookTencentTinker() {
-        if (!existsClass("com.tencent.tinker.loader.TinkerLoader")) return;
-
         hookMethod("com.tencent.tinker.loader.TinkerLoader",
             "tryLoad", "com.tencent.tinker.loader.app.TinkerApplication",
             new IHook() {
@@ -133,22 +123,20 @@ public abstract class BaseLyric extends HCBase {
      * 获取 MediaMetadataCompat 中的歌词数据
      */
     public void getMediaMetadataCompatLyric() {
-        if (existsClass("android.support.v4.media.MediaMetadataCompat$Builder")) {
-            hookMethod("android.support.v4.media.MediaMetadataCompat$Builder",
-                "putString",
-                String.class, String.class,
-                new IHook() {
-                    @Override
-                    public void after() {
-                        if (Objects.equals("android.media.metadata.TITLE", getArg(0))) {
-                            String lyric = (String) getArg(1);
-                            if (lyric == null) return;
-                            sendLyric(lyric);
-                        }
+        hookMethod("android.support.v4.media.MediaMetadataCompat$Builder",
+            "putString",
+            String.class, String.class,
+            new IHook() {
+                @Override
+                public void after() {
+                    if (Objects.equals("android.media.metadata.TITLE", getArg(0))) {
+                        String lyric = (String) getArg(1);
+                        if (lyric == null) return;
+                        sendLyric(lyric);
                     }
                 }
-            );
-        }
+            }
+        );
     }
 
     private String lastLyric;
@@ -219,7 +207,7 @@ public abstract class BaseLyric extends HCBase {
             logE(TAG, "sendStop: " + e);
         }
 
-        logD(TAG, "Stop");
+        logD(TAG, "Stop: " + data);
     }
 
     /**
@@ -273,7 +261,7 @@ public abstract class BaseLyric extends HCBase {
     /**
      * 模拟为魅族设备，用于开启魅族状态栏功能
      */
-    public static class MockFlyme {
+    public static class FlymeHelper {
         private static class MeiZuNotification extends Notification {
             public static final int FLAG_ALWAYS_SHOW_TICKER_HOOK = 0x01000000;
             public static final int FLAG_ONLY_UPDATE_TICKER_HOOK = 0x02000000;
@@ -284,9 +272,9 @@ public abstract class BaseLyric extends HCBase {
         /**
          * 启动模拟
          */
-        public static void mock() {
-            hookMethod("java.lang.Class", "getField", String.class, createHook());
-            hookMethod("java.lang.Class", "getDeclaredField", String.class, createHook());
+        public static void mockDevice() {
+            hookMethod("java.lang.Class", "getField", String.class, createMockFlagHook());
+            hookMethod("java.lang.Class", "getDeclaredField", String.class, createMockFlagHook());
 
             hookMethod("android.os.SystemProperties",
                 "get",
@@ -309,9 +297,9 @@ public abstract class BaseLyric extends HCBase {
          * 启动模拟
          * @param iHook 自定义内容
          */
-        public static void mock(@NonNull IHook iHook) {
-            hookMethod("java.lang.Class", "getField", String.class, createHook());
-            hookMethod("java.lang.Class", "getDeclaredField", String.class, createHook());
+        public static void mockDevice(@NonNull IHook iHook) {
+            hookMethod("java.lang.Class", "getField", String.class, createMockFlagHook());
+            hookMethod("java.lang.Class", "getDeclaredField", String.class, createMockFlagHook());
 
             hookMethod("android.os.SystemProperties",
                 "get",
@@ -320,7 +308,7 @@ public abstract class BaseLyric extends HCBase {
             );
         }
 
-        private static IHook createHook() {
+        private static IHook createMockFlagHook() {
             return new IHook() {
                 @Override
                 public void before() {
@@ -342,55 +330,41 @@ public abstract class BaseLyric extends HCBase {
                 hookMethod("androidx.media3.common.util.Util",
                     "setForegroundServiceNotification",
                     Service.class, int.class, Notification.class, int.class, String.class,
-                    new IHook() {
-                        @Override
-                        public void before() {
-                            Notification notification = (Notification) getArg(2);
-                            if (notification == null) return;
-                            processNotification(notification);
-                        }
-                    }
+                    createNotificationHook()
                 );
-            }
-            if (existsClass("androidx.core.app.NotificationManagerCompat")) {
+            } else if (existsClass("androidx.core.app.NotificationManagerCompat")) {
                 hookMethod("androidx.core.app.NotificationManagerCompat",
                     "notify",
                     String.class, int.class, Notification.class,
-                    new IHook() {
-                        @Override
-                        public void before() {
-                            Notification notification = (Notification) getArg(2);
-                            if (notification == null) return;
-                            processNotification(notification);
-                        }
-                    }
+                    createNotificationHook()
                 );
-            }
-            if (existsClass("android.app.NotificationManager")) {
+            } else if (existsClass("android.app.NotificationManager")) {
                 hookMethod("android.app.NotificationManager",
                     "notify",
                     String.class, int.class, Notification.class,
-                    new IHook() {
-                        @Override
-                        public void before() {
-                            Notification notification = (Notification) getArg(2);
-                            if (notification == null) return;
-                            processNotification(notification);
-                        }
-                    }
+                    createNotificationHook()
                 );
             }
         }
 
-        private static void processNotification(Notification notification) {
-            boolean isLyric = ((notification.flags & MeiZuNotification.FLAG_ALWAYS_SHOW_TICKER_HOOK) != 0
-                || (notification.flags & MeiZuNotification.FLAG_ONLY_UPDATE_TICKER_HOOK) != 0);
-            if (!isLyric) return;
-            if (notification.tickerText != null) {
-                staticBaseLyric.sendLyric(notification.tickerText.toString());
-            } else {
-                staticBaseLyric.sendStop();
-            }
+        private static IHook createNotificationHook() {
+            return new IHook() {
+                @Override
+                public void before() {
+                    Notification notification = (Notification) getArg(2);
+                    if (notification == null) return;
+
+                    boolean isLyric = ((notification.flags & MeiZuNotification.FLAG_ALWAYS_SHOW_TICKER_HOOK) != 0
+                        || (notification.flags & MeiZuNotification.FLAG_ONLY_UPDATE_TICKER_HOOK) != 0);
+                    if (isLyric) {
+                        if (notification.tickerText != null) {
+                            staticBaseLyric.sendLyric(notification.tickerText.toString());
+                        } else {
+                            staticBaseLyric.sendStop();
+                        }
+                    }
+                }
+            };
         }
     }
 

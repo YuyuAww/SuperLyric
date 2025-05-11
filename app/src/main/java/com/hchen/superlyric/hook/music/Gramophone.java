@@ -28,7 +28,6 @@ import com.hchen.superlyric.hook.BaseLyric;
 public class Gramophone extends BaseLyric {
     @Override
     protected void init() {
-        // MockFlyme.mock();
-        MockFlyme.getFlymeNotificationLyric();
+        FlymeHelper.getFlymeNotificationLyric();
     }
 }
