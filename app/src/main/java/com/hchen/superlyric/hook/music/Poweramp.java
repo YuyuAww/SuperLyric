@@ -72,6 +72,11 @@ public class Poweramp extends BaseLyric {
     private String extractValues(String text) {
         text = text.replace("\n", " ");
         Matcher matcher = pattern.matcher(text);
-        return matcher.group(1);
+        if (matcher.find()) {
+            String value = matcher.group(1);
+            if (value != null) return value.trim();
+            return null;
+        }
+        return null;
     }
 }
