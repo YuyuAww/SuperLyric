@@ -41,6 +41,7 @@ public class LXMusic extends BaseLyric {
         Class<?> lyricModuleClass = findClass("cn.toside.music.mobile.lyric.LyricModule");
         if (lyricModuleClass == null) return;
 
+        ScreenHelper.screenOffNotStopLyric("MusicModule");
         hookMethod(lyricModuleClass,
             "pause",
             "com.facebook.react.bridge.Promise",

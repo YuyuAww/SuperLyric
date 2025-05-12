@@ -36,12 +36,20 @@ import androidx.annotation.NonNull;
 import com.hchen.hooktool.HCBase;
 import com.hchen.hooktool.HCInit;
 import com.hchen.hooktool.hook.IHook;
+import com.hchen.superlyric.utils.DexKitUtils;
 import com.hchen.superlyricapi.ISuperLyricDistributor;
 import com.hchen.superlyricapi.SuperLyricData;
 
+import org.luckypray.dexkit.query.FindMethod;
+import org.luckypray.dexkit.query.matchers.MethodMatcher;
+import org.luckypray.dexkit.result.MethodData;
+import org.luckypray.dexkit.result.MethodDataList;
+
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.function.Consumer;
 
 /**
  * Super Lyric 基类
@@ -369,6 +377,26 @@ public abstract class BaseLyric extends HCBase {
     }
 
     /**
+     * 模拟为 OPPO 设备
+     */
+    public static class OPPOHelper {
+        public static void mockDevice() {
+            hookMethod("android.os.SystemProperties",
+                "get",
+                String.class, String.class,
+                new IHook() {
+                    @Override
+                    public void after() {
+                        setStaticField(Build.class, "BRAND", "oppo");
+                        setStaticField(Build.class, "MANUFACTURER", "Oppo");
+                        setStaticField(Build.class, "DISPLAY", "Color");
+                    }
+                }
+            );
+        }
+    }
+
+    /**
      * 获取 QQLite 歌词
      */
     public static class QQLite {
@@ -401,6 +429,55 @@ public abstract class BaseLyric extends HCBase {
                     }
                 }
             );
+        }
+    }
+
+    /**
+     * 阻止音乐应用获取屏幕关闭的广播，可能可以使其在息屏状态输出歌词
+     */
+    public static class ScreenHelper {
+        public static void screenOffNotStopLyric(@NonNull String... excludes) {
+            try {
+                MethodDataList methodDataList = DexKitUtils.getDexKitBridge(classLoader)
+                    .findMethod(FindMethod.create()
+                        .matcher(MethodMatcher.create()
+                            .usingStrings("android.intent.action.SCREEN_OFF")
+                            .returnType(void.class)
+                            .name("onReceive")
+                            .paramTypes(Context.class, Intent.class)
+                        )
+                    );
+
+                methodDataList.forEach(new Consumer<MethodData>() {
+                    @Override
+                    public void accept(MethodData methodData) {
+                        String className = methodData.getDeclaredClassName();
+                        if (!className.contains("Fragment") && !className.contains("Activity")) {
+                            if (Arrays.stream(excludes).noneMatch(className::contains)) {
+                                logI("ScreenHelper", "screenOffNotStopLyric class name: " + className);
+
+                                try {
+                                    hook(methodData.getMethodInstance(classLoader),
+                                        new IHook() {
+                                            @Override
+                                            public void before() {
+                                                Intent intent = (Intent) getArg(1);
+                                                if (Objects.equals(intent.getAction(), Intent.ACTION_SCREEN_OFF)) {
+                                                    returnNull();
+                                                }
+                                            }
+                                        }
+                                    );
+                                } catch (NoSuchMethodException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (Throwable e) {
+                logE("ScreenHelper", e);
+            }
         }
     }
 }
