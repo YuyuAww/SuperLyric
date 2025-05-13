@@ -123,6 +123,10 @@ jobs:
             - SHA 256：${{ env.APK_DEBUG_SHA256 }}
             
             - 正常使用建议安装 Release 版本，反馈 BUG 请使用 Debug 版本！
+            
+            #### 交流群：
+            - TG：[HChenX_Chat](https://t.me/HChenX_Chat)
+            - TG：[HChen_Module](https://t.me/HChen_Module)
 
           draft: false
           prerelease: false

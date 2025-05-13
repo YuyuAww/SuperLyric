@@ -24,6 +24,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.os.Build;
@@ -62,6 +63,7 @@ public abstract class BaseLyric extends HCBase {
     public static AudioManager audioManager;
     public static String packageName;
     public static long versionCode = -1L;
+    public static String versionName = "unknown";
 
     @Override
     @CallSuper
@@ -84,7 +86,10 @@ public abstract class BaseLyric extends HCBase {
         iSuperLyricDistributor = ISuperLyricDistributor.Stub.asInterface(bundle.getBinder("super_lyric_binder"));
 
         try {
-            versionCode = context.getPackageManager().getPackageInfo(packageName, 0).getLongVersionCode();
+            PackageInfo packageInfo = context.getPackageManager().getPackageInfo(packageName, 0);
+            versionName = packageInfo.versionName;
+            versionCode = packageInfo.getLongVersionCode();
+            logI(TAG, "App packageName: " + packageName + ", versionName: " + versionName + ", versionCode: " + versionCode);
         } catch (PackageManager.NameNotFoundException e) {
             logW(TAG, "Failed to get package: [" + packageName + "] version code!!");
         }
