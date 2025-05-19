@@ -50,7 +50,7 @@
 - 华为音乐 (蓝牙歌词)
 - Kde (蓝牙歌词)
 - Apple Music (Hook)
-- Poweramp (未知)
+- Poweramp (仅在软件歌词界面可以获取歌词)
 
 ---
 
