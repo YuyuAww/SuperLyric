@@ -28,6 +28,6 @@ import com.hchen.superlyric.hook.BaseLyric;
 public class Mimicry extends BaseLyric {
     @Override
     protected void init() {
-        FlymeHelper.getFlymeNotificationLyric();
+        MeizuHelper.getFlymeNotificationLyric();
     }
 }

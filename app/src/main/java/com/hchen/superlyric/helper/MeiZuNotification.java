@@ -16,18 +16,14 @@
 
  * Copyright (C) 2023-2025 HChenX
  */
-package com.hchen.superlyric.hook.music;
+package com.hchen.superlyric.helper;
 
-import com.hchen.collect.Collect;
-import com.hchen.superlyric.hook.BaseLyric;
+import android.app.Notification;
 
 /**
- * 椒盐音乐
+ * 魅族状态栏歌词基本参数
  */
-@Collect(targetPackage = "com.salt.music")
-public class SaltMusic extends BaseLyric {
-    @Override
-    protected void init() {
-        MeizuHelper.getFlymeNotificationLyric();
-    }
+public class MeiZuNotification extends Notification {
+    public static final int FLAG_ALWAYS_SHOW_TICKER = 0x01000000;
+    public static final int FLAG_ONLY_UPDATE_TICKER = 0x02000000;
 }

@@ -35,8 +35,10 @@ import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 
 import com.hchen.hooktool.HCBase;
+import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.HCInit;
 import com.hchen.hooktool.hook.IHook;
+import com.hchen.superlyric.helper.MeiZuNotification;
 import com.hchen.superlyric.utils.DexKitUtils;
 import com.hchen.superlyricapi.ISuperLyricDistributor;
 import com.hchen.superlyricapi.SuperLyricData;
@@ -51,6 +53,8 @@ import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Consumer;
+
+import dalvik.system.PathClassLoader;
 
 /**
  * Super Lyric 基类
@@ -112,6 +116,7 @@ public abstract class BaseLyric extends HCBase {
                     if (code == 0) {
                         HCInit.setClassLoader(application.getClassLoader());
                     }
+                    observeCall();
                 }
             }
         );
@@ -156,6 +161,7 @@ public abstract class BaseLyric extends HCBase {
 
     /**
      * 发送歌词
+     *
      * @param lyric 歌词
      */
     public void sendLyric(String lyric) {
@@ -164,6 +170,7 @@ public abstract class BaseLyric extends HCBase {
 
     /**
      * 发送歌词和当前歌词的持续时间 (ms)
+     *
      * @param lyric 歌词
      * @param delay 歌词持续时间 (ms)
      */
@@ -198,6 +205,7 @@ public abstract class BaseLyric extends HCBase {
 
     /**
      * 发送播放状态暂停
+     *
      * @param packageName 暂停播放的音乐软件包名
      */
     public void sendStop(String packageName) {
@@ -209,6 +217,7 @@ public abstract class BaseLyric extends HCBase {
 
     /**
      * 发送播放状态暂停
+     *
      * @param data 数据
      */
     public void sendStop(@NonNull SuperLyricData data) {
@@ -225,6 +234,7 @@ public abstract class BaseLyric extends HCBase {
 
     /**
      * 发送数据包
+     *
      * @param data 数据
      */
     public void sendSuperLyricData(@NonNull SuperLyricData data) {
@@ -274,68 +284,41 @@ public abstract class BaseLyric extends HCBase {
     /**
      * 模拟为魅族设备，用于开启魅族状态栏功能
      */
-    public static class FlymeHelper {
-        private static class MeiZuNotification extends Notification {
-            public static final int FLAG_ALWAYS_SHOW_TICKER_HOOK = 0x01000000;
-            public static final int FLAG_ONLY_UPDATE_TICKER_HOOK = 0x02000000;
-            public static final String FLAG_ALWAYS_SHOW_TICKER = "FLAG_ALWAYS_SHOW_TICKER";
-            public static final String FLAG_ONLY_UPDATE_TICKER = "FLAG_ONLY_UPDATE_TICKER";
-        }
+    public static class MeizuHelper {
+        private static Class<?> meizu;
 
         /**
-         * 启动模拟
+         * 模拟魅族
          */
         public static void mockDevice() {
-            hookMethod("java.lang.Class", "getField", String.class, createMockFlagHook());
-            hookMethod("java.lang.Class", "getDeclaredField", String.class, createMockFlagHook());
+            setStaticField("android.os.Build", "BRAND", "meizu");
+            setStaticField("android.os.Build", "MANUFACTURER", "Meizu");
+            setStaticField("android.os.Build", "DEVICE", "m1892");
+            setStaticField("android.os.Build", "DISPLAY", "Flyme");
+            setStaticField("android.os.Build", "PRODUCT", "meizu_16thPlus_CN");
+            setStaticField("android.os.Build", "MODEL", "meizu 16th Plus");
 
-            hookMethod("android.os.SystemProperties",
-                "get",
-                String.class, String.class,
+            try {
+                meizu = findClass("com.hchen.superlyric.helper.MeiZuNotification", classLoader);
+            } catch (Throwable ignore) {
+                meizu = findClass("com.hchen.superlyric.helper.MeiZuNotification", new PathClassLoader(HCData.getModulePath(), classLoader));
+            }
+            hookMethod(Class.class, "forName", String.class,
                 new IHook() {
                     @Override
-                    public void after() {
-                        setStaticField(Build.class, "BRAND", "meizu");
-                        setStaticField(Build.class, "MANUFACTURER", "Meizu");
-                        setStaticField(Build.class, "DEVICE", "m1892");
-                        setStaticField(Build.class, "DISPLAY", "Flyme");
-                        setStaticField(Build.class, "PRODUCT", "meizu_16thPlus_CN");
-                        setStaticField(Build.class, "MODEL", "meizu 16th Plus");
-                    }
-                }
-            );
-        }
-
-        /**
-         * 启动模拟
-         * @param iHook 自定义内容
-         */
-        public static void mockDevice(@NonNull IHook iHook) {
-            hookMethod("java.lang.Class", "getField", String.class, createMockFlagHook());
-            hookMethod("java.lang.Class", "getDeclaredField", String.class, createMockFlagHook());
-
-            hookMethod("android.os.SystemProperties",
-                "get",
-                String.class, String.class,
-                iHook
-            );
-        }
-
-        private static IHook createMockFlagHook() {
-            return new IHook() {
-                @Override
-                public void before() {
-                    try {
-                        String key = (String) getArg(0);
-                        if (Objects.equals(key, MeiZuNotification.FLAG_ALWAYS_SHOW_TICKER)) {
-                            param.setResult(MeiZuNotification.class.getDeclaredField("FLAG_ALWAYS_SHOW_TICKER_HOOK"));
-                        } else if (Objects.equals(key, MeiZuNotification.FLAG_ONLY_UPDATE_TICKER)) {
-                            param.setResult(MeiZuNotification.class.getDeclaredField("FLAG_ONLY_UPDATE_TICKER_HOOK"));
+                    public void before() {
+                        try {
+                            if ("android.app.Notification".equals(getArg(0))) {
+                                setResult(meizu);
+                                return;
+                            }
+                            Class<?> clazz = (Class<?>) callThisStaticMethod("forName", getArg(0), true, classLoader);
+                            setResult(clazz);
+                        } catch (Throwable ignore) {
                         }
-                    } catch (Throwable ignore) {
                     }
                 }
-            };
+            );
         }
 
         public static void getFlymeNotificationLyric() {
@@ -367,8 +350,8 @@ public abstract class BaseLyric extends HCBase {
                     Notification notification = (Notification) getArg(2);
                     if (notification == null) return;
 
-                    boolean isLyric = ((notification.flags & MeiZuNotification.FLAG_ALWAYS_SHOW_TICKER_HOOK) != 0
-                        || (notification.flags & MeiZuNotification.FLAG_ONLY_UPDATE_TICKER_HOOK) != 0);
+                    boolean isLyric = ((notification.flags & MeiZuNotification.FLAG_ALWAYS_SHOW_TICKER) != 0
+                        || (notification.flags & MeiZuNotification.FLAG_ONLY_UPDATE_TICKER) != 0);
                     if (isLyric) {
                         if (notification.tickerText != null) {
                             staticBaseLyric.sendLyric(notification.tickerText.toString());

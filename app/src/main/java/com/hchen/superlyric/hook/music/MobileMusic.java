@@ -28,7 +28,7 @@ import com.hchen.superlyric.hook.BaseLyric;
 public class MobileMusic extends BaseLyric {
     @Override
     protected void init() {
-        FlymeHelper.mockDevice();
-        FlymeHelper.getFlymeNotificationLyric();
+        MeizuHelper.mockDevice();
+        MeizuHelper.getFlymeNotificationLyric();
     }
 }

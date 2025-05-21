@@ -20,7 +20,6 @@ package com.hchen.superlyric.hook.music;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Build;
 
 import androidx.annotation.NonNull;
 
@@ -45,9 +44,10 @@ import java.util.Objects;
  */
 @Collect(targetPackage = "com.netease.cloudmusic")
 public class Netease extends BaseLyric {
-
     @Override
     protected void init() {
+        hookTencentTinker();
+
         if (existsClass("android.app.Instrumentation")) {
             hookMethod("android.app.Instrumentation",
                 "newApplication",
@@ -69,16 +69,10 @@ public class Netease extends BaseLyric {
     protected void onApplication(@NonNull Context context) {
         super.onApplication(context);
         HCInit.setClassLoader(context.getClassLoader());
-        hookTencentTinker();
 
         if (versionCode >= 8000041) {
-            FlymeHelper.mockDevice(new IHook() {
-                @Override
-                public void after() {
-                    setStaticField(Build.class, "DISPLAY", "Flyme");
-                }
-            });
-            FlymeHelper.getFlymeNotificationLyric();
+            MeizuHelper.mockDevice();
+            MeizuHelper.getFlymeNotificationLyric();
 
             MethodData methodData = DexKitUtils.getDexKitBridge(classLoader).findMethod(FindMethod.create()
                 .matcher(MethodMatcher.create()

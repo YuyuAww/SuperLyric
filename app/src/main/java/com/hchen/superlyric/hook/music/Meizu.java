@@ -31,8 +31,8 @@ public class Meizu extends BaseLyric {
         if (QQLite.isQQLite())
             QQLite.init();
         else {
-            FlymeHelper.mockDevice();
-            FlymeHelper.getFlymeNotificationLyric();
+            MeizuHelper.mockDevice();
+            MeizuHelper.getFlymeNotificationLyric();
         }
     }
 }

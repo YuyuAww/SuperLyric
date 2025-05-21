@@ -40,8 +40,8 @@ public class Qinalt extends BaseLyric {
                 public void after() {
                     Context context = (Context) getArg(0);
                     HCInit.setClassLoader(context.getClassLoader());
-                    FlymeHelper.mockDevice();
-                    FlymeHelper.getFlymeNotificationLyric();
+                    MeizuHelper.mockDevice();
+                    MeizuHelper.getFlymeNotificationLyric();
                 }
             }
         );

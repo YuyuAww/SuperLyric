@@ -24,7 +24,7 @@
 -keep class * extends com.hchen.hooktool.HCBase
 -keep class com.hchen.superlyric.hook.**
 -keep class com.hchen.superlyric.hook.**$*
--keep class com.hchen.superlyric.hook.BaseLyric$MockFlyme$MeiZuNotification {*;}
+-keep class com.hchen.superlyric.helper.MeiZuNotification {*;}
 -keep class  com.hchen.hooktool.HCState {
         static boolean isXposedEnabled;
         static java.lang.String framework;
