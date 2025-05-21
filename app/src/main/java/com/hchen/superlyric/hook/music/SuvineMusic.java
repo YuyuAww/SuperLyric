@@ -28,6 +28,6 @@ import com.hchen.superlyric.hook.BaseLyric;
 public class SuvineMusic extends BaseLyric {
     @Override
     protected void init() {
-        MeizuHelper.getFlymeNotificationLyric();
+        MeizuHelper.getMeizuNotificationLyric();
     }
 }

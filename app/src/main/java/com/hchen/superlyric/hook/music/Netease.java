@@ -72,7 +72,7 @@ public class Netease extends BaseLyric {
 
         if (versionCode >= 8000041) {
             MeizuHelper.mockDevice();
-            MeizuHelper.getFlymeNotificationLyric();
+            MeizuHelper.getMeizuNotificationLyric();
 
             MethodData methodData = DexKitUtils.getDexKitBridge(classLoader).findMethod(FindMethod.create()
                 .matcher(MethodMatcher.create()

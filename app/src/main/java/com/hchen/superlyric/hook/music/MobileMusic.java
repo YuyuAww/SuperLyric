@@ -29,6 +29,6 @@ public class MobileMusic extends BaseLyric {
     @Override
     protected void init() {
         MeizuHelper.mockDevice();
-        MeizuHelper.getFlymeNotificationLyric();
+        MeizuHelper.getMeizuNotificationLyric();
     }
 }

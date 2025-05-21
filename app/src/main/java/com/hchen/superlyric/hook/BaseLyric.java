@@ -27,7 +27,6 @@ import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.RemoteException;
 
@@ -316,7 +315,7 @@ public abstract class BaseLyric extends HCBase {
             );
         }
 
-        public static void getFlymeNotificationLyric() {
+        public static void getMeizuNotificationLyric() {
             if (existsClass("androidx.media3.common.util.Util")) {
                 hookMethod("androidx.media3.common.util.Util",
                     "setForegroundServiceNotification",
@@ -364,18 +363,9 @@ public abstract class BaseLyric extends HCBase {
      */
     public static class OPPOHelper {
         public static void mockDevice() {
-            hookMethod("android.os.SystemProperties",
-                "get",
-                String.class, String.class,
-                new IHook() {
-                    @Override
-                    public void after() {
-                        setStaticField(Build.class, "BRAND", "oppo");
-                        setStaticField(Build.class, "MANUFACTURER", "Oppo");
-                        setStaticField(Build.class, "DISPLAY", "Color");
-                    }
-                }
-            );
+            setStaticField("android.os.Build", "BRAND", "oppo");
+            setStaticField("android.os.Build", "MANUFACTURER", "Oppo");
+            setStaticField("android.os.Build", "DISPLAY", "Color");
         }
     }
 
