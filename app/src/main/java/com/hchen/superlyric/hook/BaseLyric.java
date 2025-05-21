@@ -116,7 +116,6 @@ public abstract class BaseLyric extends HCBase {
                     if (code == 0) {
                         HCInit.setClassLoader(application.getClassLoader());
                     }
-                    observeCall();
                 }
             }
         );
@@ -298,11 +297,7 @@ public abstract class BaseLyric extends HCBase {
             setStaticField("android.os.Build", "PRODUCT", "meizu_16thPlus_CN");
             setStaticField("android.os.Build", "MODEL", "meizu 16th Plus");
 
-            try {
-                meizu = findClass("com.hchen.superlyric.helper.MeiZuNotification", classLoader);
-            } catch (Throwable ignore) {
-                meizu = findClass("com.hchen.superlyric.helper.MeiZuNotification", new PathClassLoader(HCData.getModulePath(), classLoader));
-            }
+            meizu = findClass("com.hchen.superlyric.helper.MeiZuNotification", new PathClassLoader(HCData.getModulePath(), classLoader));
             hookMethod(Class.class, "forName", String.class,
                 new IHook() {
                     @Override
