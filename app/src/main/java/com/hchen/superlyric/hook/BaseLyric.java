@@ -61,7 +61,6 @@ import dalvik.system.PathClassLoader;
  * @author 焕晨HChen
  */
 public abstract class BaseLyric extends HCBase {
-    private static BaseLyric staticBaseLyric; // 静态实例
     private static ISuperLyricDistributor iSuperLyricDistributor;
     public static AudioManager audioManager;
     public static String packageName;
@@ -72,7 +71,6 @@ public abstract class BaseLyric extends HCBase {
     @CallSuper
     protected void onApplication(@NonNull Context context) {
         if (!isEnabled()) return;
-        staticBaseLyric = this;
         packageName = context.getPackageName();
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 
@@ -97,13 +95,13 @@ public abstract class BaseLyric extends HCBase {
             logW(TAG, "Failed to get package: [" + packageName + "] version code!!");
         }
 
-        logD(TAG, "Success get binder: " + iSuperLyricDistributor);
+        logD(TAG, "Success to get binder: " + iSuperLyricDistributor + ", caller package name: " + packageName);
     }
 
     /**
      * Hook 热更新服务，用于更改当前 classloader
      */
-    public void hookTencentTinker() {
+    public static void hookTencentTinker() {
         hookMethod("com.tencent.tinker.loader.TinkerLoader",
             "tryLoad", "com.tencent.tinker.loader.app.TinkerApplication",
             new IHook() {
@@ -123,7 +121,7 @@ public abstract class BaseLyric extends HCBase {
     /**
      * 模拟连接蓝牙
      */
-    public void openBluetoothA2dp() {
+    public static void openBluetoothA2dp() {
         hookMethod("android.media.AudioManager",
             "isBluetoothA2dpOn",
             returnResult(true)
@@ -138,7 +136,7 @@ public abstract class BaseLyric extends HCBase {
     /**
      * 获取 MediaMetadataCompat 中的歌词数据
      */
-    public void getMediaMetadataCompatLyric() {
+    public static void getMediaMetadataCompatLyric() {
         hookMethod("android.support.v4.media.MediaMetadataCompat$Builder",
             "putString",
             String.class, String.class,
@@ -155,14 +153,14 @@ public abstract class BaseLyric extends HCBase {
         );
     }
 
-    private String lastLyric;
+    private static String lastLyric;
 
     /**
      * 发送歌词
      *
      * @param lyric 歌词
      */
-    public void sendLyric(String lyric) {
+    public static void sendLyric(String lyric) {
         sendLyric(lyric, 0);
     }
 
@@ -172,7 +170,7 @@ public abstract class BaseLyric extends HCBase {
      * @param lyric 歌词
      * @param delay 歌词持续时间 (ms)
      */
-    public void sendLyric(String lyric, int delay) {
+    public static void sendLyric(String lyric, int delay) {
         if (lyric == null) return;
         if (iSuperLyricDistributor == null) return;
 
@@ -188,16 +186,16 @@ public abstract class BaseLyric extends HCBase {
                 .setDelay(delay)
             );
         } catch (RemoteException e) {
-            logE(TAG, "sendLyric: ", e);
+            logE("BaseLyric", "sendLyric: ", e);
         }
 
-        logD(TAG, delay != 0 ? "Lyric: " + lyric + ", Delay: " + delay : "Lyric: " + lyric);
+        logD("BaseLyric", delay != 0 ? "Lyric: " + lyric + ", Delay: " + delay : "Lyric: " + lyric);
     }
 
     /**
      * 发送播放状态暂停
      */
-    public void sendStop() {
+    public static void sendStop() {
         sendStop(packageName);
     }
 
@@ -206,7 +204,7 @@ public abstract class BaseLyric extends HCBase {
      *
      * @param packageName 暂停播放的音乐软件包名
      */
-    public void sendStop(String packageName) {
+    public static void sendStop(String packageName) {
         sendStop(
             new SuperLyricData()
                 .setPackageName(packageName)
@@ -218,16 +216,16 @@ public abstract class BaseLyric extends HCBase {
      *
      * @param data 数据
      */
-    public void sendStop(@NonNull SuperLyricData data) {
+    public static void sendStop(@NonNull SuperLyricData data) {
         if (iSuperLyricDistributor == null) return;
 
         try {
             iSuperLyricDistributor.onStop(data);
         } catch (RemoteException e) {
-            logE(TAG, "sendStop: " + e);
+            logE("BaseLyric", "sendStop: " + e);
         }
 
-        logD(TAG, "Stop: " + data);
+        logD("BaseLyric", "Stop: " + data);
     }
 
     /**
@@ -235,16 +233,16 @@ public abstract class BaseLyric extends HCBase {
      *
      * @param data 数据
      */
-    public void sendSuperLyricData(@NonNull SuperLyricData data) {
+    public static void sendSuperLyricData(@NonNull SuperLyricData data) {
         if (iSuperLyricDistributor == null) return;
 
         try {
             iSuperLyricDistributor.onSuperLyric(data);
         } catch (RemoteException e) {
-            logE(TAG, "sendSuperLyricData: " + e);
+            logE("BaseLyric", "sendSuperLyricData: " + e);
         }
 
-        logD(TAG, "SuperLyricData: " + data);
+        logD("BaseLyric", "SuperLyricData: " + data);
     }
 
     /**
@@ -262,7 +260,7 @@ public abstract class BaseLyric extends HCBase {
                 @Override
                 public void run() {
                     if (audioManager != null && !audioManager.isMusicActive()) {
-                        staticBaseLyric.sendStop();
+                        sendStop();
                         stop();
                     }
                 }
@@ -348,9 +346,9 @@ public abstract class BaseLyric extends HCBase {
                         || (notification.flags & MeiZuNotification.FLAG_ONLY_UPDATE_TICKER) != 0);
                     if (isLyric) {
                         if (notification.tickerText != null) {
-                            staticBaseLyric.sendLyric(notification.tickerText.toString());
+                            sendLyric(notification.tickerText.toString());
                         } else {
-                            staticBaseLyric.sendStop();
+                            sendStop();
                         }
                     }
                 }
@@ -398,7 +396,7 @@ public abstract class BaseLyric extends HCBase {
                         if (lyric == null || lyric.isEmpty()) return;
                         if (Objects.equals(lyric, "NEED_NOT_UPDATE_TITLE")) return;
 
-                        staticBaseLyric.sendLyric(lyric);
+                        sendLyric(lyric);
                     }
                 }
             );
