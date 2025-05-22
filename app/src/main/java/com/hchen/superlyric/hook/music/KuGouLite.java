@@ -24,6 +24,7 @@ import android.content.Intent;
 import androidx.annotation.NonNull;
 
 import com.hchen.collect.Collect;
+import com.hchen.hooktool.HCInit;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.hook.BaseLyric;
 import com.hchen.superlyric.utils.DexKitUtils;
@@ -32,10 +33,10 @@ import org.luckypray.dexkit.query.FindMethod;
 import org.luckypray.dexkit.query.matchers.ClassMatcher;
 import org.luckypray.dexkit.query.matchers.MethodMatcher;
 import org.luckypray.dexkit.result.MethodData;
+import org.luckypray.dexkit.result.MethodDataList;
 
+import java.lang.reflect.Method;
 import java.util.Objects;
-
-import kotlin.jvm.functions.Function0;
 
 /**
  * 酷狗音乐概念版
@@ -46,48 +47,55 @@ public class KuGouLite extends BaseLyric {
     @Override
     protected void init() {
         hookTencentTinker();
-        // openBluetoothA2dp();
     }
 
     @Override
     protected void onApplication(@NonNull Context context) {
         super.onApplication(context);
+        HCInit.setClassLoader(context.getClassLoader());
 
         try {
-            // long code = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).getLongVersionCode();
-            if (!Objects.equals(loadPackageParam.processName, "com.kugou.android.lite.support")) {
-                if (!enableStatusBarLyric()) return;
+            if (Objects.equals(loadPackageParam.processName, "com.kugou.android.lite.support"))
+                return;
+            if (!enableStatusBarLyric()) return;
 
-                if (versionCode <= 10935)
-                    hookLocalBroadcast("android.support.v4.content.LocalBroadcastManager");
-                else
-                    hookLocalBroadcast("androidx.localbroadcastmanager.content.LocalBroadcastManager");
+            if (versionCode <= 10935)
+                hookLocalBroadcast("android.support.v4.content.LocalBroadcastManager");
+            else
+                hookLocalBroadcast("androidx.localbroadcastmanager.content.LocalBroadcastManager");
 
-                // MockFlyme.mock();
-                fixProbabilityCollapse();
-            }
+            fixProbabilityCollapse();
         } catch (Throwable e) {
             logE(TAG, e);
         }
     }
 
     private boolean enableStatusBarLyric() {
-        MethodData methodData = DexKitUtils.getDexKitBridge().findMethod(FindMethod.create()
-            .matcher(MethodMatcher.create()
-                .declaredClass(ClassMatcher.create()
+        try {
+            MethodDataList methodDataList = DexKitUtils.getDexKitBridge().findMethod(FindMethod.create()
+                .matcher(MethodMatcher.create()
+                    .declaredClass(ClassMatcher.create()
+                        .usingStrings("key_status_bar_lyric_open")
+                    )
                     .usingStrings("key_status_bar_lyric_open")
                 )
-                .usingStrings("key_status_bar_lyric_open")
-                .returnType(boolean.class)
-            )
-        ).singleOrThrow(new Function0<Throwable>() {
-            @Override
-            public Throwable invoke() {
-                return new RuntimeException("Failed to enable status bar lyric!!");
+            );
+
+            Method[] methods = new Method[2];
+            for (MethodData methodData : methodDataList) {
+                if (Objects.equals(methodData.getMethodInstance(classLoader).getReturnType(), boolean.class))
+                    methods[0] = methodData.getMethodInstance(classLoader);
+                else methods[1] = methodData.getMethodInstance(classLoader);
             }
-        });
-        try {
-            hook(methodData.getMethodInstance(classLoader), returnResult(true));
+
+            hook(methods[0], new IHook() {
+                @Override
+                public void before() {
+                    callThisMethod(methods[1], true);
+                    setResult(true);
+                }
+            });
+            hook(methods[1], setArg(0, true));
         } catch (NoSuchMethodException e) {
             logE(TAG, "Failed to hook status bar lyric!!", e);
             return false;
