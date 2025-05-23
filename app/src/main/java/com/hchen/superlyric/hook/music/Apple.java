@@ -33,12 +33,9 @@ import com.hchen.superlyric.hook.BaseLyric;
 import com.hchen.superlyric.utils.DexKitUtils;
 
 import org.luckypray.dexkit.query.FindClass;
-import org.luckypray.dexkit.query.FindMethod;
 import org.luckypray.dexkit.query.enums.StringMatchType;
 import org.luckypray.dexkit.query.matchers.ClassMatcher;
-import org.luckypray.dexkit.query.matchers.MethodMatcher;
 import org.luckypray.dexkit.result.ClassData;
-import org.luckypray.dexkit.result.MethodData;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -49,14 +46,11 @@ import java.util.LinkedList;
  */
 @Collect(targetPackage = "com.apple.android.music")
 public class Apple extends BaseLyric {
-    private Class<?> lyricConvertClass;
-    private String lyricConvertMethodName;
     private Object currentSongInfo;
-    private Object lyricObject;
+    private LyricsLinePtrHelper lyricsLinePtrHelper;
     private PlaybackState playbackState;
     private Object playbackItem;
     private Object lyricViewModel;
-
     private final LinkedList<LyricsLine> lyricList = new LinkedList<>();
     private String currentTitle = "";
     private String currentTrackId;
@@ -163,7 +157,6 @@ public class Apple extends BaseLyric {
             )
         ).singleOrNull();
         Method mediaMetadataCompatStaticMethod = findMethodPro("android.support.v4.media.MediaMetadataCompat")
-            .withParamTypes(Object.class)
             .withStatic()
             .single()
             .get();
@@ -231,47 +224,24 @@ public class Apple extends BaseLyric {
                     if (songInfoPtr == null) return;
 
                     currentSongInfo = callMethod(songInfoPtr, "get");
-                    if (currentSongInfo == null || lyricConvertClass == null) return;
+                    if (currentSongInfo == null) return;
 
                     Object lyricsSectionVector = callMethod(currentSongInfo, "getSections");
                     if (lyricsSectionVector == null) return;
 
-                    lyricObject = newInstance(lyricConvertClass, lyricsSectionVector);
+                    lyricsLinePtrHelper = new LyricsLinePtrHelper(lyricsSectionVector);
                     updateLyricList();
                 }
             }
         );
 
-        findLyricClasses();
         hookPlaybackItemSetId();
-
         logI(
             TAG,
             "mediaMetadataCompatStaticMethod: " + mediaMetadataCompatStaticMethod +
                 ", mediaMetadataField: " + mediaMetadataField +
                 ", playbackStateField: " + playbackStateField
         );
-    }
-
-    private void findLyricClasses() {
-        try {
-            MethodData methodData = DexKitUtils.getDexKitBridge().findMethod(FindMethod.create()
-                .matcher(MethodMatcher.create()
-                    .returnType("com.apple.android.music.ttml.javanative.model.LyricsLine$LyricsLinePtr")
-                    .paramCount(1)
-                    .paramTypes("int")
-                    .usingNumbers(0)
-                )
-            ).singleOrNull();
-
-            if (methodData != null) {
-                lyricConvertClass = methodData.getClassInstance(classLoader);
-                lyricConvertMethodName = methodData.getName();
-                logD(TAG, "Found lyric converter class: " + lyricConvertClass.getName());
-            }
-        } catch (Exception e) {
-            logE(TAG, "Failed to find lyric classes", e);
-        }
     }
 
     private void hookPlaybackItemSetId() {
@@ -327,7 +297,7 @@ public class Apple extends BaseLyric {
     }
 
     private void updateLyricList() {
-        if (lyricObject == null || lyricConvertMethodName == null) return;
+        if (lyricsLinePtrHelper == null) return;
         LinkedList<LyricsLine> newLyricList = new LinkedList<>();
 
         try {
@@ -335,7 +305,7 @@ public class Apple extends BaseLyric {
             while (true) {
                 Object lyricsLinePtr;
                 try {
-                    lyricsLinePtr = callMethod(lyricObject, lyricConvertMethodName, i);
+                    lyricsLinePtr = lyricsLinePtrHelper.getLyricsLinePtr(i);
                     if (lyricsLinePtr == null) break;
                 } catch (Exception e) {
                     break;
@@ -408,5 +378,44 @@ public class Apple extends BaseLyric {
                 lyricHandler.postDelayed(this, 400);
             }
         });
+    }
+
+    private record LyricsLinePtrHelper(Object lyricsSectionVector) {
+        public Object getLyricsLinePtr(int i10) {
+            int i11 = 0;
+            int i12 = 0;
+
+            while (true) {
+                long j10 = i11;
+                if (j10 < (long) callMethod(lyricsSectionVector, "size")) {
+                    Object lyricsLinePtr = callMethod(lyricsSectionVector, "get", j10);
+                    long size = i12 + (long) callMethod(
+                        callMethod(
+                            callMethod(lyricsLinePtr,
+                                "get"
+                            ),
+                            "getLines"
+                        ),
+                        "size"
+                    );
+                    if ((long) i10 >= size) {
+                        i12 = Math.toIntExact(size);
+                        i11++;
+                    } else
+                        return callMethod(
+                            callMethod(
+                                callMethod(
+                                    lyricsLinePtr,
+                                    "get"
+                                ),
+                                "getLines"
+                            ),
+                            "get",
+                            i10 - i12
+                        );
+                } else
+                    return null;
+            }
+        }
     }
 }
