@@ -55,7 +55,6 @@ public class Apple extends BaseLyric {
     private String currentTitle = "";
     private String currentTrackId;
     private boolean isRunning = false;
-
     private Handler mainHandler;
     private Handler lyricHandler;
     private LyricsLine lastShownLyric;
