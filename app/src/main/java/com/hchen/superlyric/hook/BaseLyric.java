@@ -35,7 +35,6 @@ import androidx.annotation.NonNull;
 
 import com.hchen.hooktool.HCBase;
 import com.hchen.hooktool.HCData;
-import com.hchen.hooktool.HCInit;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.helper.MeiZuNotification;
 import com.hchen.superlyric.utils.DexKitUtils;
@@ -111,7 +110,7 @@ public abstract class BaseLyric extends HCBase {
                     Application application = (Application) getArg(0);
                     int code = intent.getIntExtra("intent_return_code", -2);
                     if (code == 0) {
-                        HCInit.setClassLoader(application.getClassLoader());
+                        HCData.setClassLoader(application.getClassLoader());
                     }
                 }
             }

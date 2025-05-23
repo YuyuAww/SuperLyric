@@ -3,7 +3,7 @@ agp = "8.9.1"
 annotation = "1.9.1"
 api = "82"
 dexkit = "2.0.4"
-hooktool = "v.2.1.1"
+hooktool = "v.2.1.2"
 superlyricapi = "1.7"
 
 [libraries]

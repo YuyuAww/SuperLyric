@@ -23,7 +23,7 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 
 import com.hchen.collect.Collect;
-import com.hchen.hooktool.HCInit;
+import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.hook.BaseLyric;
 import com.hchen.superlyric.utils.DexKitUtils;
@@ -48,8 +48,7 @@ public class KuWo extends BaseLyric {
     @Override
     protected void onApplication(@NonNull Context context) {
         super.onApplication(context);
-
-        HCInit.setClassLoader(context.getClassLoader());
+        HCData.setClassLoader(context.getClassLoader());
 
         if (existsClass("cn.kuwo.mod.playcontrol.RemoteControlLyricMgr")) {
             hookAllMethod("cn.kuwo.mod.playcontrol.RemoteControlLyricMgr",

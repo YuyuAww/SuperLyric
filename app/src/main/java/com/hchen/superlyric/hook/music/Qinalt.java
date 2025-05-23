@@ -21,7 +21,7 @@ package com.hchen.superlyric.hook.music;
 import android.content.Context;
 
 import com.hchen.collect.Collect;
-import com.hchen.hooktool.HCInit;
+import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.hook.BaseLyric;
 
@@ -39,7 +39,7 @@ public class Qinalt extends BaseLyric {
                 @Override
                 public void after() {
                     Context context = (Context) getArg(0);
-                    HCInit.setClassLoader(context.getClassLoader());
+                    HCData.setClassLoader(context.getClassLoader());
                     MeizuHelper.mockDevice();
                     MeizuHelper.getMeizuNotificationLyric();
                 }
