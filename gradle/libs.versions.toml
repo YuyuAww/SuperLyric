@@ -3,14 +3,20 @@ agp = "8.9.1"
 annotation = "1.9.1"
 api = "82"
 dexkit = "2.0.4"
+dexkitcache = "v.0.5"
+gson = "2.13.1"
 hooktool = "v.2.1.2"
+mmkv = "2.2.2"
 superlyricapi = "1.7"
 
 [libraries]
 annotation = { module = "androidx.annotation:annotation", version.ref = "annotation" }
 api = { module = "de.robv.android.xposed:api", version.ref = "api" }
 dexkit = { module = "org.luckypray:dexkit", version.ref = "dexkit" }
+dexkitcache = { module = "com.github.HChenX:DexkitCache", version.ref = "dexkitcache" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 hooktool = { group = "com.github.HChenX", name = "HookTool", version.ref = "hooktool" }
+mmkv = { module = "com.tencent:mmkv", version.ref = "mmkv" }
 superlyricapi = { module = "com.github.HChenX:SuperLyricApi", version.ref = "superlyricapi" }
 
 [plugins]

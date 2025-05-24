@@ -25,10 +25,12 @@ import android.view.View;
 import androidx.annotation.NonNull;
 
 import com.hchen.collect.Collect;
+import com.hchen.dexkitcache.DexkitCache;
+import com.hchen.dexkitcache.IDexkit;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.hook.BaseLyric;
-import com.hchen.superlyric.utils.DexKitUtils;
 
+import org.luckypray.dexkit.DexKitBridge;
 import org.luckypray.dexkit.query.FindClass;
 import org.luckypray.dexkit.query.FindField;
 import org.luckypray.dexkit.query.FindMethod;
@@ -36,8 +38,7 @@ import org.luckypray.dexkit.query.matchers.ClassMatcher;
 import org.luckypray.dexkit.query.matchers.FieldMatcher;
 import org.luckypray.dexkit.query.matchers.MethodMatcher;
 import org.luckypray.dexkit.result.ClassData;
-import org.luckypray.dexkit.result.FieldData;
-import org.luckypray.dexkit.result.MethodData;
+import org.luckypray.dexkit.result.base.BaseData;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -64,15 +65,17 @@ public class QQMusic extends BaseLyric {
         Class<?> marqueeLyricViewClass = findClass("com.lyricengine.ui.MarqueeLyricView");
         if (marqueeLyricViewClass == null) return;
 
-        ClassData classData = DexKitUtils.getDexKitBridge().findClass(FindClass.create()
-            .matcher(ClassMatcher.create()
-                .usingStrings("[generateTextBySplit] get singer text failed!")
-            )
-        ).singleOrNull();
+        durationField = DexkitCache.findMember("qq_music$1", new IDexkit() {
+            @NonNull
+            @Override
+            public BaseData dexkit(@NonNull DexKitBridge bridge) throws ReflectiveOperationException {
+                ClassData classData = bridge.findClass(FindClass.create()
+                    .matcher(ClassMatcher.create()
+                        .usingStrings("[generateTextBySplit] get singer text failed!")
+                    )
+                ).singleOrNull();
 
-        if (classData != null) {
-            try {
-                FieldData fieldData = DexKitUtils.getDexKitBridge().findField(FindField.create()
+                return bridge.findField(FindField.create()
                     .matcher(FieldMatcher.create()
                         .declaredClass(classData.getInstance(classLoader))
                         .type(long.class)
@@ -81,91 +84,90 @@ public class QQMusic extends BaseLyric {
                             .name("forbidLineHighlight")
                         )
                     )
-                ).singleOrNull();
-
-                if (fieldData == null) return;
-                durationField = fieldData.getFieldInstance(classLoader);
-            } catch (Throwable e) {
-                logE(TAG, e);
+                ).single();
             }
-        }
+        });
 
-        MethodData methodData = DexKitUtils.getDexKitBridge().findMethod(FindMethod.create()
-            .matcher(MethodMatcher.create()
-                .declaredClass(ClassMatcher.create()
-                    .usingStrings("showLyricView operateLyric:true")
-                )
-                .usingStrings("showLyricView operateLyric:true")
-            )
-        ).singleOrThrow(() -> new Throwable("Failed to find visibility method!!"));
-
-        try {
-            Class<?> clazz = methodData.getClassInstance(classLoader);
-            MethodData methodData1 = DexKitUtils.getDexKitBridge().findMethod(FindMethod.create()
-                .matcher(MethodMatcher.create()
-                    .declaredClass(clazz)
-                    .usingStrings("showLyricTipsView operateLyric:false")
-                )
-            ).singleOrThrow(() -> new Throwable("Failed to find visibility 1 method!!"));
-            hook(methodData1.getMethodInstance(classLoader),
-                new IHook() {
-                    @Override
-                    public void after() {
-                        lyricDataList.clear();
-                    }
-                }
-            );
-
-            Field viewField = null;
-            for (Field field : clazz.getDeclaredFields()) {
-                if (Objects.equals(field.getType(), View.class)) {
-                    viewField = field;
-                    break;
+        Method method = DexkitCache.findMember("qq_music$2", new IDexkit() {
+            @NonNull
+            @Override
+            public BaseData dexkit(@NonNull DexKitBridge bridge) throws ReflectiveOperationException {
+                return bridge.findMethod(FindMethod.create()
+                    .matcher(MethodMatcher.create()
+                        .declaredClass(ClassMatcher.create()
+                            .usingStrings("showLyricView operateLyric:true")
+                        )
+                        .usingStrings("showLyricView operateLyric:true")
+                    )
+                ).singleOrThrow(() -> new Throwable("Failed to find visibility method!!"));
+            }
+        });
+        Class<?> clazz = method.getDeclaringClass();
+        Method method1 = DexkitCache.findMember("qq_music$3", new IDexkit() {
+            @NonNull
+            @Override
+            public BaseData dexkit(@NonNull DexKitBridge bridge) throws ReflectiveOperationException {
+                return bridge.findMethod(FindMethod.create()
+                    .matcher(MethodMatcher.create()
+                        .declaredClass(clazz)
+                        .usingStrings("showLyricTipsView operateLyric:false")
+                    )
+                ).singleOrThrow(() -> new Throwable("Failed to find visibility 1 method!!"));
+            }
+        });
+        hook(method1,
+            new IHook() {
+                @Override
+                public void after() {
+                    lyricDataList.clear();
                 }
             }
-            if (viewField == null)
-                return;
+        );
 
-            Field finalViewField = viewField;
-            hook(methodData.getMethodInstance(classLoader),
-                new IHook() {
-                    @Override
-                    public void after() {
-                        View view = (View) getThisField(finalViewField);
-                        view.setVisibility(GONE);
+        Field viewField = null;
+        for (Field field : clazz.getDeclaredFields()) {
+            if (Objects.equals(field.getType(), View.class)) {
+                viewField = field;
+                break;
+            }
+        }
+        if (viewField == null) return;
+        Field finalViewField = viewField;
+        hook(method,
+            new IHook() {
+                @Override
+                public void after() {
+                    View view = (View) getThisField(finalViewField);
+                    view.setVisibility(GONE);
+                }
+            }
+        );
+
+        Method method2 = DexkitCache.findMember("qq_music$4", new IDexkit() {
+            @NonNull
+            @Override
+            public BaseData dexkit(@NonNull DexKitBridge bridge) throws ReflectiveOperationException {
+                return bridge.findMethod(FindMethod.create()
+                    .matcher(MethodMatcher.create()
+                        .declaredClass(ClassMatcher.create()
+                            .usingStrings("[ifNeedTransfer] import ")
+                        )
+                        .name("getInt")
+                    )
+                ).singleOrThrow(() -> new Throwable("Failed to find getInt method!!"));
+            }
+        });
+        hook(method2,
+            new IHook() {
+                @Override
+                public void before() {
+                    String key = (String) getArg(0);
+                    if (Objects.equals(key, "KEY_STATUS_BAR_LYRIC_SWITCH")) {
+                        setResult(1);
                     }
                 }
-            );
-        } catch (Throwable e) {
-            logE(TAG, e);
-            return;
-        }
-
-        MethodData getIntMethodData = DexKitUtils.getDexKitBridge().findMethod(FindMethod.create()
-            .matcher(MethodMatcher.create()
-                .declaredClass(ClassMatcher.create()
-                    .usingStrings("[ifNeedTransfer] import ")
-                )
-                .name("getInt")
-            )
-        ).singleOrThrow(() -> new Throwable("Failed to find getInt method!!"));
-
-        try {
-            hook(getIntMethodData.getMethodInstance(classLoader),
-                new IHook() {
-                    @Override
-                    public void before() {
-                        String key = (String) getArg(0);
-                        if (Objects.equals(key, "KEY_STATUS_BAR_LYRIC_SWITCH")) {
-                            setResult(1);
-                        }
-                    }
-                }
-            );
-        } catch (Throwable e) {
-            logE(TAG, e);
-            return;
-        }
+            }
+        );
 
         hookAllMethod(marqueeLyricViewClass,
             "setLyric", new IHook() {
@@ -190,25 +192,28 @@ public class QQMusic extends BaseLyric {
             }
         );
 
-        ClassData classData1 = DexKitUtils.getDexKitBridge().findClass(FindClass.create()
-            .matcher(ClassMatcher.create()
-                .usingStrings("[addWindowIfNotExist] addView")
-            )
-        ).singleOrNull();
-
+        Class<?> clazz1 = DexkitCache.findMember("qq_music$5", new IDexkit() {
+            @NonNull
+            @Override
+            public BaseData dexkit(@NonNull DexKitBridge bridge) throws ReflectiveOperationException {
+                return bridge.findClass(FindClass.create()
+                    .matcher(ClassMatcher.create()
+                        .usingStrings("[addWindowIfNotExist] addView")
+                    )
+                ).single();
+            }
+        });
         try {
-            if (classData1 == null) return;
-
-            Method method = null;
-            for (Method m : classData1.getInstance(classLoader).getDeclaredMethods()) {
+            Method mm = null;
+            for (Method m : clazz1.getDeclaredMethods()) {
                 if (m.getParameterCount() == 2 && Objects.equals(m.getParameterTypes()[1], Object.class)) {
-                    method = m;
+                    mm = m;
                     break;
                 }
             }
-            if (method == null) return;
+            if (mm == null) return;
 
-            hook(method,
+            hook(mm,
                 new IHook() {
                     @Override
                     public void before() {

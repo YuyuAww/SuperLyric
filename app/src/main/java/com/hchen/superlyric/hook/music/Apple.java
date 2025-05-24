@@ -27,15 +27,19 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
 
+import androidx.annotation.NonNull;
+
 import com.hchen.collect.Collect;
+import com.hchen.dexkitcache.DexkitCache;
+import com.hchen.dexkitcache.IDexkit;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.hook.BaseLyric;
-import com.hchen.superlyric.utils.DexKitUtils;
 
+import org.luckypray.dexkit.DexKitBridge;
 import org.luckypray.dexkit.query.FindClass;
 import org.luckypray.dexkit.query.enums.StringMatchType;
 import org.luckypray.dexkit.query.matchers.ClassMatcher;
-import org.luckypray.dexkit.result.ClassData;
+import org.luckypray.dexkit.result.base.BaseData;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -109,52 +113,57 @@ public class Apple extends BaseLyric {
         );
 
         // Hook 播放状态变化
-        ClassData mediaControllerCompatHandlerClass = DexKitUtils.getDexKitBridge().findClass(FindClass.create()
-            .searchPackages("android.support.v4.media.session")
-            .matcher(ClassMatcher.create()
-                .className("android.support.v4.media.session.MediaControllerCompat$", StringMatchType.Contains)
-                .superClass("android.os.Handler")
-            )
-        ).singleOrNull();
-
+        Class<?> mediaControllerCompatHandlerClass = DexkitCache.findMember("apple$1", new IDexkit() {
+            @NonNull
+            @Override
+            public BaseData dexkit(@NonNull DexKitBridge bridge) throws ReflectiveOperationException {
+                return bridge.findClass(FindClass.create()
+                    .searchPackages("android.support.v4.media.session")
+                    .matcher(ClassMatcher.create()
+                        .className("android.support.v4.media.session.MediaControllerCompat$", StringMatchType.Contains)
+                        .superClass("android.os.Handler")
+                    )
+                ).single();
+            }
+        });
         Field playbackStateField = findFieldPro("android.support.v4.media.session.PlaybackStateCompat")
             .withFieldType(PlaybackState.class)
             .single();
 
-        if (mediaControllerCompatHandlerClass != null) {
-            try {
-                // android.support.v4.media.session.MediaControllerCompat$a$b
-                hookMethod(mediaControllerCompatHandlerClass.getInstance(classLoader),
-                    "handleMessage",
-                    Message.class,
-                    new IHook() {
-                        @Override
-                        public void before() {
-                            Message m = (Message) getArg(0);
-                            if (m.what == 2) {
-                                // 获取 PlaybackStateCompat 对象
-                                Object playbackStateCompat = m.obj;
-                                if (playbackStateCompat == null) return;
+        // android.support.v4.media.session.MediaControllerCompat$a$b
+        hookMethod(mediaControllerCompatHandlerClass,
+            "handleMessage",
+            Message.class,
+            new IHook() {
+                @Override
+                public void before() {
+                    Message m = (Message) getArg(0);
+                    if (m.what == 2) {
+                        // 获取 PlaybackStateCompat 对象
+                        Object playbackStateCompat = m.obj;
+                        if (playbackStateCompat == null) return;
 
-                                playbackState = (PlaybackState) getField(playbackStateCompat, playbackStateField);
-                                updateLyricPosition();
-                            }
-                        }
+                        playbackState = (PlaybackState) getField(playbackStateCompat, playbackStateField);
+                        updateLyricPosition();
                     }
-                );
-            } catch (Throwable e) {
-                logE(TAG, e);
+                }
             }
-        }
+        );
 
         // Hook MediaMetadata 变化
-        ClassData mediaControllerCompatClass = DexKitUtils.getDexKitBridge().findClass(FindClass.create()
-            .searchPackages("android.support.v4.media.session")
-            .matcher(ClassMatcher.create()
-                .className("android.support.v4.media.session.MediaControllerCompat$", StringMatchType.Contains)
-                .superClass("android.media.session.MediaController$Callback")
-            )
-        ).singleOrNull();
+        Class<?> mediaControllerCompatClass = DexkitCache.findMember("apple$2", new IDexkit() {
+            @NonNull
+            @Override
+            public BaseData dexkit(@NonNull DexKitBridge bridge) throws ReflectiveOperationException {
+                return bridge.findClass(FindClass.create()
+                    .searchPackages("android.support.v4.media.session")
+                    .matcher(ClassMatcher.create()
+                        .className("android.support.v4.media.session.MediaControllerCompat$", StringMatchType.Contains)
+                        .superClass("android.media.session.MediaController$Callback")
+                    )
+                ).single();
+            }
+        });
         Method mediaMetadataCompatStaticMethod = findMethodPro("android.support.v4.media.MediaMetadataCompat")
             .withStatic()
             .single()
@@ -164,53 +173,47 @@ public class Apple extends BaseLyric {
             .withFieldType(MediaMetadata.class)
             .single();
 
-        if (mediaControllerCompatClass != null) {
-            try {
-                // android.support.v4.media.session.MediaControllerCompat$a$a
-                hookMethod(mediaControllerCompatClass.getInstance(classLoader),
-                    "onMetadataChanged",
-                    MediaMetadata.class,
-                    new IHook() {
-                        @Override
-                        public void before() {
-                            try {
-                                // 获取MediaMetadata实例
-                                Object metadataCompat = callStaticMethod(
-                                    mediaMetadataCompatStaticMethod,
-                                    getArg(0)
-                                );
+        // android.support.v4.media.session.MediaControllerCompat$a$a
+        hookMethod(mediaControllerCompatClass,
+            "onMetadataChanged",
+            MediaMetadata.class,
+            new IHook() {
+                @Override
+                public void before() {
+                    try {
+                        // 获取MediaMetadata实例
+                        Object metadataCompat = callStaticMethod(
+                            mediaMetadataCompatStaticMethod,
+                            getArg(0)
+                        );
 
-                                MediaMetadata metadata = (MediaMetadata) getField(metadataCompat, mediaMetadataField);
-                                String newTitle = metadata.getString(MediaMetadata.METADATA_KEY_TITLE);
+                        MediaMetadata metadata = (MediaMetadata) getField(metadataCompat, mediaMetadataField);
+                        String newTitle = metadata.getString(MediaMetadata.METADATA_KEY_TITLE);
 
-                                // 检测歌曲变化
-                                if (newTitle != null && !currentTitle.equals(newTitle)) {
-                                    // 停止现有歌词
-                                    sendLyric("");
-                                    sendStop();
+                        // 检测歌曲变化
+                        if (newTitle != null && !currentTitle.equals(newTitle)) {
+                            // 停止现有歌词
+                            sendLyric("");
+                            sendStop();
 
-                                    // 重置现有状态
-                                    lyricList.clear();
-                                    isRunning = false;
-                                    lastShownLyric = null;
+                            // 重置现有状态
+                            lyricList.clear();
+                            isRunning = false;
+                            lastShownLyric = null;
 
-                                    // 更新当前歌曲名
-                                    currentTitle = newTitle;
-                                    logD(TAG, "Current song title: " + currentTitle);
+                            // 更新当前歌曲名
+                            currentTitle = newTitle;
+                            logD(TAG, "Current song title: " + currentTitle);
 
-                                    // 请求当前歌词
-                                    mainHandler.postDelayed(() -> requestLyrics(), 400);
-                                }
-                            } catch (Exception e) {
-                                logE(TAG, "Error getting MediaMetadata", e);
-                            }
+                            // 请求当前歌词
+                            mainHandler.postDelayed(() -> requestLyrics(), 400);
                         }
+                    } catch (Exception e) {
+                        logE(TAG, "Error getting MediaMetadata", e);
                     }
-                );
-            } catch (Throwable e) {
-                logE(TAG, e);
+                }
             }
-        }
+        );
 
         // Hook 歌词构建方法
         hookMethod("com.apple.android.music.player.viewmodel.PlayerLyricsViewModel",

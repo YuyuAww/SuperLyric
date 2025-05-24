@@ -24,17 +24,18 @@ import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 
 import com.hchen.collect.Collect;
+import com.hchen.dexkitcache.DexkitCache;
+import com.hchen.dexkitcache.IDexkit;
 import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.hook.BaseLyric;
-import com.hchen.superlyric.utils.DexKitUtils;
 
+import org.luckypray.dexkit.DexKitBridge;
 import org.luckypray.dexkit.query.FindClass;
 import org.luckypray.dexkit.query.FindMethod;
 import org.luckypray.dexkit.query.matchers.ClassMatcher;
 import org.luckypray.dexkit.query.matchers.MethodMatcher;
-import org.luckypray.dexkit.result.ClassData;
-import org.luckypray.dexkit.result.MethodData;
+import org.luckypray.dexkit.result.base.BaseData;
 
 import java.lang.reflect.Method;
 import java.util.Objects;
@@ -74,57 +75,52 @@ public class Netease extends BaseLyric {
             MeizuHelper.mockDevice();
             MeizuHelper.getMeizuNotificationLyric();
 
-            MethodData methodData = DexKitUtils.getDexKitBridge(classLoader).findMethod(FindMethod.create()
-                .matcher(MethodMatcher.create()
-                    .declaredClass(ClassMatcher.create()
-                        .usingStrings("KEY_SHOW_LOCK_SCREEN_PERMISSION")
-                    )
-                    .usingStrings("KEY_SHOW_LOCK_SCREEN_PERMISSION")
-                )
-            ).singleOrNull();
-
-            try {
-                if (methodData != null) {
-                    hook(methodData.getMethodInstance(classLoader),
-                        returnResult(null)
-                    );
+            Method method = DexkitCache.findMember("netease$1", new IDexkit() {
+                @NonNull
+                @Override
+                public BaseData dexkit(@NonNull DexKitBridge bridge) throws ReflectiveOperationException {
+                    return bridge.findMethod(FindMethod.create()
+                        .matcher(MethodMatcher.create()
+                            .declaredClass(ClassMatcher.create()
+                                .usingStrings("KEY_SHOW_LOCK_SCREEN_PERMISSION")
+                            )
+                            .usingStrings("KEY_SHOW_LOCK_SCREEN_PERMISSION")
+                        )
+                    ).single();
                 }
-            } catch (Throwable e) {
-                logE(TAG, e);
-            }
+            });
+            hook(method, returnResult(null));
 
-            ClassData classData = DexKitUtils.getDexKitBridge(classLoader).findClass(FindClass.create()
-                .matcher(ClassMatcher.create()
-                    .usingStrings("com/netease/cloudmusic/module/lyric/flyme/StatusBarLyricSettingManager.class:setSwitchStatus:(Z)V")
-                )
-            ).singleOrNull();
-
-            try {
-                if (classData != null) {
-                    Class<?> clazz = classData.getInstance(classLoader);
-                    for (Method method : clazz.getDeclaredMethods()) {
-                        if (method.getReturnType().equals(boolean.class)) {
-                            hook(method, returnResult(true));
-                        } else if (method.getParameterCount() == 1 && method.getParameterTypes()[0].equals(boolean.class)) {
-                            hook(method, new IHook() {
-                                @Override
-                                public void before() {
-                                    setArg(0, true);
-                                }
-                            });
-                        } else if (method.getReturnType().equals(SharedPreferences.class)) {
-                            hook(method, new IHook() {
-                                @Override
-                                public void after() {
-                                    SharedPreferences sp = (SharedPreferences) getResult();
-                                    sp.edit().putBoolean("status_bar_lyric_setting_key", true).apply();
-                                }
-                            });
+            Class<?> clazz = DexkitCache.findMember("netease$2", new IDexkit() {
+                @NonNull
+                @Override
+                public BaseData dexkit(@NonNull DexKitBridge bridge) throws ReflectiveOperationException {
+                    return bridge.findClass(FindClass.create()
+                        .matcher(ClassMatcher.create()
+                            .usingStrings("com/netease/cloudmusic/module/lyric/flyme/StatusBarLyricSettingManager.class:setSwitchStatus:(Z)V")
+                        )
+                    ).single();
+                }
+            });
+            for (Method m : clazz.getDeclaredMethods()) {
+                if (m.getReturnType().equals(boolean.class)) {
+                    hook(m, returnResult(true));
+                } else if (m.getParameterCount() == 1 && m.getParameterTypes()[0].equals(boolean.class)) {
+                    hook(m, new IHook() {
+                        @Override
+                        public void before() {
+                            setArg(0, true);
                         }
-                    }
+                    });
+                } else if (m.getReturnType().equals(SharedPreferences.class)) {
+                    hook(m, new IHook() {
+                        @Override
+                        public void after() {
+                            SharedPreferences sp = (SharedPreferences) getResult();
+                            sp.edit().putBoolean("status_bar_lyric_setting_key", true).apply();
+                        }
+                    });
                 }
-            } catch (ClassNotFoundException e) {
-                logE(TAG, "Failed to hook status bar lyric!!");
             }
         } else {
             getMediaMetadataCompatLyric();

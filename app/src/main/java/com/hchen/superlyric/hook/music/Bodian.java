@@ -24,15 +24,18 @@ import android.view.View;
 import androidx.annotation.NonNull;
 
 import com.hchen.collect.Collect;
+import com.hchen.dexkitcache.DexkitCache;
+import com.hchen.dexkitcache.IDexkit;
 import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.hook.BaseLyric;
-import com.hchen.superlyric.utils.DexKitUtils;
 
+import org.luckypray.dexkit.DexKitBridge;
 import org.luckypray.dexkit.query.FindMethod;
 import org.luckypray.dexkit.query.matchers.MethodMatcher;
-import org.luckypray.dexkit.result.MethodData;
+import org.luckypray.dexkit.result.base.BaseData;
 
+import java.lang.reflect.Method;
 import java.util.Objects;
 
 /**
@@ -54,30 +57,30 @@ public class Bodian extends BaseLyric {
         Class<?> deskLyricViewClass = findClass("cn.kuwo.player.util.DeskLyricView");
         if (deskLyricViewClass == null) return;
 
-        MethodData methodData = DexKitUtils.getDexKitBridge(classLoader).findMethod(FindMethod.create()
-            .matcher(MethodMatcher.create()
-                .declaredClass(deskLyricViewClass)
-                .paramCount(1)
-                .paramTypes(String.class)
-                .returnType(float.class)
-                .addInvoke("Landroid/graphics/Paint;->measureText(Ljava/lang/String;)F")
-            )
-        ).singleOrThrow(() -> new Throwable("Failed to find lyric method!!"));
-
-        try {
-            hook(methodData.getMethodInstance(classLoader),
-                new IHook() {
-                    @Override
-                    public void before() {
-                        String lyric = (String) getArg(0);
-                        sendLyric(lyric);
-                    }
+        Method methodData = DexkitCache.findMember("bodian$1", new IDexkit() {
+            @NonNull
+            @Override
+            public BaseData dexkit(@NonNull DexKitBridge bridge) throws ReflectiveOperationException {
+                return bridge.findMethod(FindMethod.create()
+                    .matcher(MethodMatcher.create()
+                        .declaredClass(deskLyricViewClass)
+                        .paramCount(1)
+                        .paramTypes(String.class)
+                        .returnType(float.class)
+                        .addInvoke("Landroid/graphics/Paint;->measureText(Ljava/lang/String;)F")
+                    )
+                ).singleOrThrow(() -> new Throwable("Failed to find lyric method!!"));
+            }
+        });
+        hook(methodData,
+            new IHook() {
+                @Override
+                public void before() {
+                    String lyric = (String) getArg(0);
+                    sendLyric(lyric);
                 }
-            );
-        } catch (Throwable e) {
-            logE(TAG, e);
-            return;
-        }
+            }
+        );
 
         hookMethod("io.flutter.plugin.common.MethodCall",
             "argument",
@@ -97,7 +100,7 @@ public class Bodian extends BaseLyric {
             new IHook() {
                 @Override
                 public void after() {
-                    View view= (View) thisObject();
+                    View view = (View) thisObject();
                     view.setAlpha(0f);
                 }
             }

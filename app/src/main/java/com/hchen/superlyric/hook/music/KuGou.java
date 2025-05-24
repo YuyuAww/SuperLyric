@@ -24,16 +24,17 @@ import android.content.Intent;
 import androidx.annotation.NonNull;
 
 import com.hchen.collect.Collect;
+import com.hchen.dexkitcache.DexkitCache;
+import com.hchen.dexkitcache.IDexkitList;
 import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.hook.BaseLyric;
-import com.hchen.superlyric.utils.DexKitUtils;
 
+import org.luckypray.dexkit.DexKitBridge;
 import org.luckypray.dexkit.query.FindMethod;
 import org.luckypray.dexkit.query.matchers.ClassMatcher;
 import org.luckypray.dexkit.query.matchers.MethodMatcher;
-import org.luckypray.dexkit.result.MethodData;
-import org.luckypray.dexkit.result.MethodDataList;
+import org.luckypray.dexkit.result.BaseDataList;
 
 import java.lang.reflect.Method;
 import java.util.Objects;
@@ -69,35 +70,35 @@ public class KuGou extends BaseLyric {
     }
 
     private boolean enableStatusBarLyric() {
-        try {
-            MethodDataList methodDataList = DexKitUtils.getDexKitBridge().findMethod(FindMethod.create()
-                .matcher(MethodMatcher.create()
-                    .declaredClass(ClassMatcher.create()
+        Method[] methodList = DexkitCache.findMemberList("kugou$1", new IDexkitList() {
+            @NonNull
+            @Override
+            public BaseDataList<?> dexkit(@NonNull DexKitBridge bridge) throws ReflectiveOperationException {
+                return bridge.findMethod(FindMethod.create()
+                    .matcher(MethodMatcher.create()
+                        .declaredClass(ClassMatcher.create()
+                            .usingStrings("key_status_bar_lyric_open")
+                        )
                         .usingStrings("key_status_bar_lyric_open")
                     )
-                    .usingStrings("key_status_bar_lyric_open")
-                )
-            );
-
-            Method[] methods = new Method[2];
-            for (MethodData methodData : methodDataList) {
-                if (Objects.equals(methodData.getMethodInstance(classLoader).getReturnType(), boolean.class))
-                    methods[0] = methodData.getMethodInstance(classLoader);
-                else methods[1] = methodData.getMethodInstance(classLoader);
+                );
             }
+        });
 
-            hook(methods[0], new IHook() {
-                @Override
-                public void before() {
-                    callThisMethod(methods[1], true);
-                    setResult(true);
-                }
-            });
-            hook(methods[1], setArg(0, true));
-        } catch (NoSuchMethodException e) {
-            logE(TAG, "Failed to hook status bar lyric!!", e);
-            return false;
+        Method[] methods = new Method[2];
+        for (Method m : methodList) {
+            if (Objects.equals(m.getReturnType(), boolean.class)) methods[0] = m;
+            else methods[1] = m;
         }
+
+        hook(methods[0], new IHook() {
+            @Override
+            public void before() {
+                callThisMethod(methods[1], true);
+                setResult(true);
+            }
+        });
+        hook(methods[1], setArg(0, true));
         return true;
     }
 

@@ -33,24 +33,25 @@ import android.os.RemoteException;
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 
+import com.hchen.dexkitcache.DexkitCache;
+import com.hchen.dexkitcache.IDexkitList;
 import com.hchen.hooktool.HCBase;
 import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.helper.MeiZuNotification;
-import com.hchen.superlyric.utils.DexKitUtils;
 import com.hchen.superlyricapi.ISuperLyricDistributor;
 import com.hchen.superlyricapi.SuperLyricData;
 
+import org.luckypray.dexkit.DexKitBridge;
 import org.luckypray.dexkit.query.FindMethod;
 import org.luckypray.dexkit.query.matchers.MethodMatcher;
-import org.luckypray.dexkit.result.MethodData;
-import org.luckypray.dexkit.result.MethodDataList;
+import org.luckypray.dexkit.result.BaseDataList;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.function.Consumer;
 
 import dalvik.system.PathClassLoader;
 
@@ -408,40 +409,38 @@ public abstract class BaseLyric extends HCBase {
     public static class ScreenHelper {
         public static void screenOffNotStopLyric(@NonNull String... excludes) {
             try {
-                MethodDataList methodDataList = DexKitUtils.getDexKitBridge(classLoader)
-                    .findMethod(FindMethod.create()
-                        .matcher(MethodMatcher.create()
-                            .usingStrings("android.intent.action.SCREEN_OFF")
-                            .returnType(void.class)
-                            .name("onReceive")
-                            .paramTypes(Context.class, Intent.class)
-                        )
-                    );
-
-                methodDataList.forEach(new Consumer<MethodData>() {
+                Method[] methods = DexkitCache.findMemberList("screen_helper", new IDexkitList() {
+                    @NonNull
                     @Override
-                    public void accept(MethodData methodData) {
-                        String className = methodData.getDeclaredClassName();
-                        if (!className.contains("Fragment") && !className.contains("Activity")) {
-                            if (Arrays.stream(excludes).noneMatch(className::contains)) {
-                                logI("ScreenHelper", "screenOffNotStopLyric class name: " + className);
+                    public BaseDataList<?> dexkit(@NonNull DexKitBridge bridge) throws ReflectiveOperationException {
+                        return bridge.findMethod(FindMethod.create()
+                            .matcher(MethodMatcher.create()
+                                .usingStrings("android.intent.action.SCREEN_OFF")
+                                .returnType(void.class)
+                                .name("onReceive")
+                                .paramTypes(Context.class, Intent.class)
+                            )
+                        );
+                    }
+                });
 
-                                try {
-                                    hook(methodData.getMethodInstance(classLoader),
-                                        new IHook() {
-                                            @Override
-                                            public void before() {
-                                                Intent intent = (Intent) getArg(1);
-                                                if (Objects.equals(intent.getAction(), Intent.ACTION_SCREEN_OFF)) {
-                                                    returnNull();
-                                                }
-                                            }
+                Arrays.stream(methods).forEach(method -> {
+                    String className = method.getDeclaringClass().getSimpleName();
+                    if (!className.contains("Fragment") && !className.contains("Activity")) {
+                        if (Arrays.stream(excludes).noneMatch(className::contains)) {
+                            logI("ScreenHelper", "screenOffNotStopLyric class name: " + className);
+
+                            hook(method,
+                                new IHook() {
+                                    @Override
+                                    public void before() {
+                                        Intent intent = (Intent) getArg(1);
+                                        if (Objects.equals(intent.getAction(), Intent.ACTION_SCREEN_OFF)) {
+                                            returnNull();
                                         }
-                                    );
-                                } catch (NoSuchMethodException e) {
-                                    throw new RuntimeException(e);
+                                    }
                                 }
-                            }
+                            );
                         }
                     }
                 });

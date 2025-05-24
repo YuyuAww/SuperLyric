@@ -23,16 +23,18 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 
 import com.hchen.collect.Collect;
+import com.hchen.dexkitcache.DexkitCache;
+import com.hchen.dexkitcache.IDexkit;
 import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.hook.BaseLyric;
-import com.hchen.superlyric.utils.DexKitUtils;
 
+import org.luckypray.dexkit.DexKitBridge;
 import org.luckypray.dexkit.query.FindMethod;
 import org.luckypray.dexkit.query.matchers.MethodMatcher;
-import org.luckypray.dexkit.result.MethodData;
+import org.luckypray.dexkit.result.base.BaseData;
 
-import kotlin.jvm.functions.Function0;
+import java.lang.reflect.Method;
 
 /**
  * OPPO 音乐
@@ -51,29 +53,26 @@ public class HeytapMusic extends BaseLyric {
         OPPOHelper.mockDevice();
         getMediaMetadataCompatLyric();
 
-        MethodData methodData = DexKitUtils.getDexKitBridge().findMethod(FindMethod.create()
-            .matcher(MethodMatcher.create()
-                .declaredClass("com.allsaints.music.player.thirdpart.MediaSessionHelper")
-                .usingStrings("isCarBluetoothConnected 没有蓝牙连接权限")
-            )
-        ).singleOrThrow(new Function0<Throwable>() {
+        Method method = DexkitCache.findMember("heytap$1", new IDexkit() {
+            @NonNull
             @Override
-            public Throwable invoke() {
-                return new Throwable("Failed to find bluetooth method!!");
+            public BaseData dexkit(@NonNull DexKitBridge bridge) throws ReflectiveOperationException {
+                return bridge.findMethod(FindMethod.create()
+                    .matcher(MethodMatcher.create()
+                        .declaredClass("com.allsaints.music.player.thirdpart.MediaSessionHelper")
+                        .usingStrings("isCarBluetoothConnected 没有蓝牙连接权限")
+                    )
+                ).singleOrThrow(() -> new Throwable("Failed to find bluetooth method!!"));
             }
         });
 
-        try {
-            hook(methodData.getMethodInstance(classLoader),
-                new IHook() {
-                    @Override
-                    public void after() {
-                        setResult(true);
-                    }
+        hook(method,
+            new IHook() {
+                @Override
+                public void after() {
+                    setResult(true);
                 }
-            );
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
+            }
+        );
     }
 }

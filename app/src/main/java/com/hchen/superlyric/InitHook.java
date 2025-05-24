@@ -24,12 +24,12 @@ import static com.hchen.hooktool.HCInit.LOG_I;
 import androidx.annotation.NonNull;
 
 import com.hchen.collect.CollectMap;
+import com.hchen.dexkitcache.DexkitCache;
 import com.hchen.hooktool.HCBase;
 import com.hchen.hooktool.HCEntrance;
 import com.hchen.hooktool.HCInit;
 import com.hchen.hooktool.log.XposedLog;
 import com.hchen.superlyric.hook.music.Api;
-import com.hchen.superlyric.utils.DexKitUtils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
@@ -80,7 +80,13 @@ public class InitHook extends HCEntrance {
         }
 
         try {
-            DexKitUtils.init(loadPackageParam);
+            // DexKitUtils.init(loadPackageParam);
+            DexkitCache.init(
+                "superlyric",
+                loadPackageParam.classLoader,
+                loadPackageParam.appInfo.sourceDir,
+                loadPackageParam.appInfo.dataDir
+            );
             CollectMap.getOnLoadPackageList(loadPackageParam.packageName).forEach(new Consumer<String>() {
                 @Override
                 public void accept(String fullClass) {
@@ -118,7 +124,8 @@ public class InitHook extends HCEntrance {
         } catch (Throwable e) {
             XposedLog.logE(TAG, "InitHook error: ", e);
         } finally {
-            DexKitUtils.close();
+            // DexKitUtils.close();
+            DexkitCache.close();
         }
     }
 
