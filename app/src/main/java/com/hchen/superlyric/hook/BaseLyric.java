@@ -320,13 +320,15 @@ public abstract class BaseLyric extends HCBase {
                     Service.class, int.class, Notification.class, int.class, String.class,
                     createNotificationHook()
                 );
-            } else if (existsClass("androidx.core.app.NotificationManagerCompat")) {
+            }
+            if (existsClass("androidx.core.app.NotificationManagerCompat")) {
                 hookMethod("androidx.core.app.NotificationManagerCompat",
                     "notify",
                     String.class, int.class, Notification.class,
                     createNotificationHook()
                 );
-            } else if (existsClass("android.app.NotificationManager")) {
+            }
+            if (existsClass("android.app.NotificationManager")) {
                 hookMethod("android.app.NotificationManager",
                     "notify",
                     String.class, int.class, Notification.class,
