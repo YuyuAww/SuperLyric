@@ -81,12 +81,14 @@ public class InitHook extends HCEntrance {
 
         try {
             // DexKitUtils.init(loadPackageParam);
-            DexkitCache.init(
-                "superlyric",
-                loadPackageParam.classLoader,
-                loadPackageParam.appInfo.sourceDir,
-                loadPackageParam.appInfo.dataDir
-            );
+            if (loadPackageParam.appInfo != null) {
+                DexkitCache.init(
+                    "superlyric",
+                    loadPackageParam.classLoader,
+                    loadPackageParam.appInfo.sourceDir,
+                    loadPackageParam.appInfo.dataDir
+                );
+            }
             CollectMap.getOnLoadPackageList(loadPackageParam.packageName).forEach(new Consumer<String>() {
                 @Override
                 public void accept(String fullClass) {

@@ -21,6 +21,7 @@ package com.hchen.superlyric.hook.music;
 import static android.view.View.GONE;
 
 import android.view.View;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
@@ -143,31 +144,66 @@ public class QQMusic extends BaseLyric {
             }
         );
 
-        Method method2 = DexkitCache.findMember("qq_music$4", new IDexkit() {
+        Class<?> marqueeTextViewClass = findClass("com.tencent.qqmusic.ui.MarqueeTextView");
+        Class<?> songInfoClass = findClass("com.tencent.qqmusicplayerprocess.songinfo.SongInfo");
+        Method method2 = DexkitCache.findMember("qq_music$6", new IDexkit() {
             @NonNull
             @Override
             public BaseData dexkit(@NonNull DexKitBridge bridge) throws ReflectiveOperationException {
                 return bridge.findMethod(FindMethod.create()
                     .matcher(MethodMatcher.create()
-                        .declaredClass(ClassMatcher.create()
-                            .usingStrings("[ifNeedTransfer] import ")
-                        )
-                        .name("getInt")
+                        .declaredClass(clazz)
+                        .usingStrings("  lyricModel:")
                     )
-                ).singleOrThrow(() -> new Throwable("Failed to find getInt method!!"));
+                ).single();
             }
         });
+        Field field = findFieldPro(clazz)
+            .withFieldType(marqueeTextViewClass)
+            .single();
+        Field field1 = findFieldPro(clazz)
+            .withFieldType(songInfoClass)
+            .single();
         hook(method2,
             new IHook() {
                 @Override
-                public void before() {
-                    String key = (String) getArg(0);
-                    if (Objects.equals(key, "KEY_STATUS_BAR_LYRIC_SWITCH")) {
-                        setResult(1);
+                public void after() {
+                    TextView textView = (TextView) getThisField(field);
+                    Object songInfo = getThisField(field1);
+                    textView.setVisibility(GONE);
+                    if (songInfo != null) {
+                        sendLyric((String) textView.getText());
                     }
                 }
             }
         );
+
+        // 不强开，容易造成误导
+        // Method method2 = DexkitCache.findMember("qq_music$4", new IDexkit() {
+        //     @NonNull
+        //     @Override
+        //     public BaseData dexkit(@NonNull DexKitBridge bridge) throws ReflectiveOperationException {
+        //         return bridge.findMethod(FindMethod.create()
+        //             .matcher(MethodMatcher.create()
+        //                 .declaredClass(ClassMatcher.create()
+        //                     .usingStrings("[ifNeedTransfer] import ")
+        //                 )
+        //                 .name("getInt")
+        //             )
+        //         ).singleOrThrow(() -> new Throwable("Failed to find getInt method!!"));
+        //     }
+        // });
+        // hook(method2,
+        //     new IHook() {
+        //         @Override
+        //         public void before() {
+        //             String key = (String) getArg(0);
+        //             if (Objects.equals(key, "KEY_STATUS_BAR_LYRIC_SWITCH")) {
+        //                 setResult(1);
+        //             }
+        //         }
+        //     }
+        // );
 
         hookAllMethod(marqueeLyricViewClass,
             "setLyric", new IHook() {
@@ -227,10 +263,10 @@ public class QQMusic extends BaseLyric {
         }
     }
 
-    private void updateLyricData(Object mLyric) {
+    private void updateLyricData(Object lyric) {
         CopyOnWriteArrayList<?> copyOnWriteArrayList = new CopyOnWriteArrayList<>();
-        for (Field field : mLyric.getClass().getDeclaredFields()) {
-            Object value = getField(mLyric, field);
+        for (Field field : lyric.getClass().getDeclaredFields()) {
+            Object value = getField(lyric, field);
             if (value instanceof CopyOnWriteArrayList<?> list) {
                 copyOnWriteArrayList = list;
                 break;
