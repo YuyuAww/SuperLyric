@@ -186,26 +186,23 @@ public class SuperLyricProxy extends HCBase {
                     if (!(getArg(2) instanceof Intent intent)) return;
                     if (!Objects.equals(intent.getAction(), "Super_Lyric")) return;
 
-                    String callerPackage = "unknown";
                     try {
-                        Object caller = getArg(0);
-                        Object callerApp = callThisMethod("getRecordForAppLOSP", caller);
-                        callerPackage = (String) getField(getField(callerApp, "info"), "packageName");
-                    } catch (Throwable ignore) {
-                    }
+                        String callerPackage = "unknown";
+                        try {
+                            Object caller = getArg(0);
+                            Object callerApp = callThisMethod("getRecordForAppLOSP", caller);
+                            callerPackage = (String) getField(getField(callerApp, "info"), "packageName");
+                        } catch (Throwable ignore) {
+                        }
 
-                    String addPackage = intent.getStringExtra("super_lyric_add_package");
-                    if (addPackage != null) {
-                        mSuperLyricService.addExemptPackage(addPackage);
-                        logD(TAG, "Will add package name: " + addPackage + ", caller package name: " + callerPackage);
-                        return;
-                    }
+                        String addPackage = intent.getStringExtra("super_lyric_add_package");
+                        if (addPackage != null) {
+                            mSuperLyricService.addExemptPackage(addPackage);
+                            logD(TAG, "Will add package name: " + addPackage + ", caller package name: " + callerPackage);
+                            return;
+                        }
 
-                    Bundle bundle = intent.getExtras();
-                    if (bundle == null) return;
-
-                    try {
-                        String unController = bundle.getString("super_lyric_un_controller");
+                        String unController = intent.getStringExtra("super_lyric_un_controller");
                         if (unController != null && !unController.isEmpty()) {
                             if (mSuperLyricControllerService != null) {
                                 mSuperLyricControllerService.removeSuperLyricStubIfNeed(unController);
@@ -214,30 +211,36 @@ public class SuperLyricProxy extends HCBase {
                             return;
                         }
 
-                        if (bundle.getBoolean("super_lyric_self_control", false)) {
-                            String pkg = bundle.getString("super_lyric_self_control_package");
-                            mSuperLyricService.addSelfControlPackage(pkg);
-                            logD(TAG, "Will add self control package name: " + pkg + ", caller package name: " + callerPackage);
-                            return;
-                        } else if (bundle.getBoolean("super_lyric_un_self_control", false)) {
-                            String pkg = bundle.getString("super_lyric_un_self_control_package");
-                            mSuperLyricService.removeSelfControlPackage(pkg);
-                            logD(TAG, "Will remove self control package name: " + pkg + ", caller package name: " + callerPackage);
+                        String selfControl = intent.getStringExtra("super_lyric_self_control_package");
+                        if (selfControl != null && !selfControl.isEmpty()) {
+                            mSuperLyricService.addSelfControlPackage(selfControl);
+                            logD(TAG, "Will add self control package name: " + selfControl + ", caller package name: " + callerPackage);
                             return;
                         }
+
+                        String unSelfControl = intent.getStringExtra("super_lyric_un_self_control_package");
+                        if (unSelfControl != null && !unSelfControl.isEmpty()) {
+                            mSuperLyricService.removeSelfControlPackage(unSelfControl);
+                            logD(TAG, "Will remove self control package name: " + unSelfControl + ", caller package name: " + callerPackage);
+                            return;
+                        }
+
+                        Bundle bundle = intent.getExtras();
+                        if (bundle == null) return;
 
                         IBinder superLyricBinder = bundle.getBinder("super_lyric_binder");
                         if (superLyricBinder != null) {
                             ISuperLyric iSuperLyric = ISuperLyric.Stub.asInterface(superLyricBinder);
                             mSuperLyricService.addSuperLyricBinder(superLyricBinder, iSuperLyric);
                             logD(TAG, "Will add binder: " + superLyricBinder + ", super lyric binder: " + iSuperLyric + ", caller package name: " + callerPackage);
-                        } else {
-                            superLyricBinder = bundle.getBinder("super_lyric_un_binder");
-                            if (superLyricBinder != null) {
-                                ISuperLyric iSuperLyric = ISuperLyric.Stub.asInterface(superLyricBinder);
-                                mSuperLyricService.removeSuperLyricBinder(superLyricBinder);
-                                logD(TAG, "Will remove binder: " + superLyricBinder + ", super lyric binder: " + iSuperLyric + ", caller package name: " + callerPackage);
-                            }
+                            return;
+                        }
+
+                        superLyricBinder = bundle.getBinder("super_lyric_un_binder");
+                        if (superLyricBinder != null) {
+                            ISuperLyric iSuperLyric = ISuperLyric.Stub.asInterface(superLyricBinder);
+                            mSuperLyricService.removeSuperLyricBinder(superLyricBinder);
+                            logD(TAG, "Will remove binder: " + superLyricBinder + ", super lyric binder: " + iSuperLyric + ", caller package name: " + callerPackage);
                         }
                     } catch (Throwable e) {
                         logE(TAG, e);
