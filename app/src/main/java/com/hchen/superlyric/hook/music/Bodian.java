@@ -50,8 +50,8 @@ public class Bodian extends BaseLyric {
     }
 
     @Override
-    protected void onApplication(@NonNull Context context) {
-        super.onApplication(context);
+    protected void onApplicationAfter(@NonNull Context context) {
+        super.onApplicationAfter(context);
         HCData.setClassLoader(context.getClassLoader());
 
         Class<?> deskLyricViewClass = findClass("cn.kuwo.player.util.DeskLyricView");

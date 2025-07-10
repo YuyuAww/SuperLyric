@@ -28,6 +28,7 @@ import com.hchen.dexkitcache.DexkitCache;
 import com.hchen.dexkitcache.IDexkit;
 import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.hook.IHook;
+import com.hchen.superlyric.helper.MeizuHelper;
 import com.hchen.superlyric.hook.BaseLyric;
 
 import org.luckypray.dexkit.DexKitBridge;
@@ -67,13 +68,13 @@ public class Netease extends BaseLyric {
     }
 
     @Override
-    protected void onApplication(@NonNull Context context) {
-        super.onApplication(context);
+    protected void onApplicationAfter(@NonNull Context context) {
+        super.onApplicationAfter(context);
         HCData.setClassLoader(context.getClassLoader());
 
         if (versionCode >= 8000041) {
-            MeizuHelper.mockDevice();
-            MeizuHelper.getMeizuNotificationLyric();
+            MeizuHelper.shallowLayerDeviceMock();
+            MeizuHelper.hookNotificationLyric();
 
             Method method = DexkitCache.findMember("netease$1", new IDexkit() {
                 @NonNull

@@ -23,6 +23,7 @@ import android.content.Context;
 import com.hchen.collect.Collect;
 import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.hook.IHook;
+import com.hchen.superlyric.helper.MeizuHelper;
 import com.hchen.superlyric.hook.BaseLyric;
 
 /**
@@ -40,8 +41,8 @@ public class Qinalt extends BaseLyric {
                 public void after() {
                     Context context = (Context) getArg(0);
                     HCData.setClassLoader(context.getClassLoader());
-                    MeizuHelper.mockDevice();
-                    MeizuHelper.getMeizuNotificationLyric();
+                    MeizuHelper.depthDeviceMock();
+                    MeizuHelper.hookNotificationLyric();
                 }
             }
         );

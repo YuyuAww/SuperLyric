@@ -19,8 +19,6 @@
 package com.hchen.superlyric.hook;
 
 import android.app.Application;
-import android.app.Notification;
-import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -33,27 +31,13 @@ import android.os.RemoteException;
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 
-import com.hchen.dexkitcache.DexkitCache;
-import com.hchen.dexkitcache.IDexkitList;
 import com.hchen.hooktool.HCBase;
 import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.hook.IHook;
-import com.hchen.superlyric.helper.MeiZuNotification;
 import com.hchen.superlyricapi.ISuperLyricDistributor;
 import com.hchen.superlyricapi.SuperLyricData;
 
-import org.luckypray.dexkit.DexKitBridge;
-import org.luckypray.dexkit.query.FindMethod;
-import org.luckypray.dexkit.query.matchers.MethodMatcher;
-import org.luckypray.dexkit.result.BaseDataList;
-
-import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.Objects;
-import java.util.Timer;
-import java.util.TimerTask;
-
-import dalvik.system.PathClassLoader;
 
 /**
  * Super Lyric 基类
@@ -69,8 +53,7 @@ public abstract class BaseLyric extends HCBase {
 
     @Override
     @CallSuper
-    protected void onApplication(@NonNull Context context) {
-        if (!isEnabled()) return;
+    protected void onApplicationAfter(@NonNull Context context) {
         packageName = context.getPackageName();
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 
@@ -91,8 +74,7 @@ public abstract class BaseLyric extends HCBase {
             versionName = packageInfo.versionName;
             versionCode = packageInfo.getLongVersionCode();
             logI(TAG, "App packageName: " + packageName + ", versionName: " + versionName + ", versionCode: " + versionCode);
-        } catch (PackageManager.NameNotFoundException e) {
-            logW(TAG, "Failed to get package: [" + packageName + "] version code!!");
+        } catch (PackageManager.NameNotFoundException ignore) {
         }
 
         logD(TAG, "Success to get binder: " + iSuperLyricDistributor + ", caller package name: " + packageName);
@@ -103,7 +85,8 @@ public abstract class BaseLyric extends HCBase {
      */
     public static void hookTencentTinker() {
         hookMethod("com.tencent.tinker.loader.TinkerLoader",
-            "tryLoad", "com.tencent.tinker.loader.app.TinkerApplication",
+            "tryLoad",
+            "com.tencent.tinker.loader.app.TinkerApplication",
             new IHook() {
                 @Override
                 public void after() {
@@ -119,7 +102,7 @@ public abstract class BaseLyric extends HCBase {
     }
 
     /**
-     * 模拟连接蓝牙
+     * 模拟蓝牙为开启状态
      */
     public static void openBluetoothA2dp() {
         hookMethod("android.media.AudioManager",
@@ -180,16 +163,17 @@ public abstract class BaseLyric extends HCBase {
             if (lyric.isEmpty()) return;
             lastLyric = lyric;
 
-            iSuperLyricDistributor.onSuperLyric(new SuperLyricData()
-                .setPackageName(packageName)
-                .setLyric(lyric)
-                .setDelay(delay)
+            iSuperLyricDistributor.onSuperLyric(
+                new SuperLyricData()
+                    .setPackageName(packageName)
+                    .setLyric(lyric)
+                    .setDelay(delay)
             );
         } catch (RemoteException e) {
             logE("BaseLyric", "sendLyric: ", e);
         }
 
-        logD("BaseLyric", delay != 0 ? "Lyric: " + lyric + ", Delay: " + delay : "Lyric: " + lyric);
+        logD("BaseLyric", delay != 0 ? "Send lyric: " + lyric + ", delay: " + delay : "Send lyric: " + lyric);
     }
 
     /**
@@ -225,7 +209,7 @@ public abstract class BaseLyric extends HCBase {
             logE("BaseLyric", "sendStop: " + e);
         }
 
-        logD("BaseLyric", "Stop: " + data);
+        logD("BaseLyric", "Stop lyric: " + data);
     }
 
     /**
@@ -242,213 +226,6 @@ public abstract class BaseLyric extends HCBase {
             logE("BaseLyric", "sendSuperLyricData: " + e);
         }
 
-        logD("BaseLyric", "SuperLyricData: " + data);
-    }
-
-    /**
-     * 超时检查，超时自动发送暂停状态
-     */
-    public static class Timeout {
-        private static Timer timer = new Timer();
-        private static boolean isRunning = false;
-
-        public static void start() {
-            if (isRunning) return;
-
-            timer = new Timer();
-            timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    if (audioManager != null && !audioManager.isMusicActive()) {
-                        sendStop();
-                        stop();
-                    }
-                }
-            }, 0, 1000);
-            isRunning = true;
-        }
-
-        public static void stop() {
-            if (timer == null || !isRunning) return;
-
-            timer.cancel();
-            timer = null;
-            isRunning = false;
-        }
-    }
-
-    /**
-     * 模拟为魅族设备，用于开启魅族状态栏功能
-     */
-    public static class MeizuHelper {
-        private static Class<?> meizu;
-
-        /**
-         * 模拟魅族
-         */
-        public static void mockDevice() {
-            setStaticField("android.os.Build", "BRAND", "meizu");
-            setStaticField("android.os.Build", "MANUFACTURER", "Meizu");
-            setStaticField("android.os.Build", "DEVICE", "m1892");
-            setStaticField("android.os.Build", "DISPLAY", "Flyme");
-            setStaticField("android.os.Build", "PRODUCT", "meizu_16thPlus_CN");
-            setStaticField("android.os.Build", "MODEL", "meizu 16th Plus");
-
-            meizu = findClass("com.hchen.superlyric.helper.MeiZuNotification", new PathClassLoader(HCData.getModulePath(), classLoader));
-            hookMethod(Class.class, "forName", String.class,
-                new IHook() {
-                    @Override
-                    public void before() {
-                        try {
-                            if ("android.app.Notification".equals(getArg(0))) {
-                                setResult(meizu);
-                                return;
-                            }
-                            Class<?> clazz = (Class<?>) callThisStaticMethod("forName", getArg(0), true, classLoader);
-                            setResult(clazz);
-                        } catch (Throwable ignore) {
-                        }
-                    }
-                }
-            );
-        }
-
-        public static void getMeizuNotificationLyric() {
-            if (existsClass("androidx.media3.common.util.Util")) {
-                hookMethod("androidx.media3.common.util.Util",
-                    "setForegroundServiceNotification",
-                    Service.class, int.class, Notification.class, int.class, String.class,
-                    createNotificationHook()
-                );
-            }
-            if (existsClass("androidx.core.app.NotificationManagerCompat")) {
-                hookMethod("androidx.core.app.NotificationManagerCompat",
-                    "notify",
-                    String.class, int.class, Notification.class,
-                    createNotificationHook()
-                );
-            }
-            if (existsClass("android.app.NotificationManager")) {
-                hookMethod("android.app.NotificationManager",
-                    "notify",
-                    String.class, int.class, Notification.class,
-                    createNotificationHook()
-                );
-            }
-        }
-
-        private static IHook createNotificationHook() {
-            return new IHook() {
-                @Override
-                public void before() {
-                    Notification notification = (Notification) getArg(2);
-                    if (notification == null) return;
-
-                    boolean isLyric = ((notification.flags & MeiZuNotification.FLAG_ALWAYS_SHOW_TICKER) != 0
-                        || (notification.flags & MeiZuNotification.FLAG_ONLY_UPDATE_TICKER) != 0);
-                    if (isLyric) {
-                        if (notification.tickerText != null) {
-                            sendLyric(notification.tickerText.toString());
-                        } else {
-                            sendStop();
-                        }
-                    }
-                }
-            };
-        }
-    }
-
-    /**
-     * 模拟为 OPPO 设备
-     */
-    public static class OPPOHelper {
-        public static void mockDevice() {
-            setStaticField("android.os.Build", "BRAND", "oppo");
-            setStaticField("android.os.Build", "MANUFACTURER", "Oppo");
-            setStaticField("android.os.Build", "DISPLAY", "Color");
-        }
-    }
-
-    /**
-     * 获取 QQLite 歌词
-     */
-    public static class QQLite {
-        /**
-         * 是否支持 QQLite
-         */
-        public static boolean isQQLite() {
-            return existsClass("com.tencent.qqmusic.core.song.SongInfo");
-        }
-
-        public static void init() {
-            if (!isQQLite()) return;
-
-            hookMethod("com.tencent.qqmusiccommon.util.music.RemoteLyricController",
-                "BluetoothA2DPConnected",
-                returnResult(true)
-            );
-
-            hookMethod("com.tencent.qqmusiccommon.util.music.RemoteControlManager",
-                "updataMetaData",
-                "com.tencent.qqmusic.core.song.SongInfo", String.class,
-                new IHook() {
-                    @Override
-                    public void before() {
-                        String lyric = (String) getArg(1);
-                        if (lyric == null || lyric.isEmpty()) return;
-                        if (Objects.equals(lyric, "NEED_NOT_UPDATE_TITLE")) return;
-
-                        sendLyric(lyric);
-                    }
-                }
-            );
-        }
-    }
-
-    /**
-     * 阻止音乐应用获取屏幕关闭的广播，可能可以使其在息屏状态输出歌词
-     */
-    public static class ScreenHelper {
-        public static void screenOffNotStopLyric(@NonNull String... excludes) {
-            try {
-                Method[] methods = DexkitCache.findMemberList("screen_helper", new IDexkitList() {
-                    @NonNull
-                    @Override
-                    public BaseDataList<?> dexkit(@NonNull DexKitBridge bridge) throws ReflectiveOperationException {
-                        return bridge.findMethod(FindMethod.create()
-                            .matcher(MethodMatcher.create()
-                                .usingStrings("android.intent.action.SCREEN_OFF")
-                                .returnType(void.class)
-                                .name("onReceive")
-                                .paramTypes(Context.class, Intent.class)
-                            )
-                        );
-                    }
-                });
-
-                Arrays.stream(methods).forEach(method -> {
-                    String className = method.getDeclaringClass().getSimpleName();
-                    if (!className.contains("Fragment") && !className.contains("Activity")) {
-                        if (Arrays.stream(excludes).noneMatch(className::contains)) {
-                            logI("ScreenHelper", "screenOffNotStopLyric class name: " + className);
-
-                            hook(method,
-                                new IHook() {
-                                    @Override
-                                    public void before() {
-                                        Intent intent = (Intent) getArg(1);
-                                        if (Objects.equals(intent.getAction(), Intent.ACTION_SCREEN_OFF)) {
-                                            returnNull();
-                                        }
-                                    }
-                                }
-                            );
-                        }
-                    }
-                });
-            } catch (Throwable e) {
-                logE("ScreenHelper", e);
-            }
-        }
+        logD("BaseLyric", "Send data: " + data);
     }
 }

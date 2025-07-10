@@ -87,7 +87,7 @@ public class Qishui extends BaseLyric {
             .withParamCount(1)
             .withReturnType(boolean.class)
             .single()
-            .get();
+            .obtain();
 
         hook(b,
             new IHook() {

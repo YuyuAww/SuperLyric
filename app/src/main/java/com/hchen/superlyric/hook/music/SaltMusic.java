@@ -19,6 +19,7 @@
 package com.hchen.superlyric.hook.music;
 
 import com.hchen.collect.Collect;
+import com.hchen.superlyric.helper.MeizuHelper;
 import com.hchen.superlyric.hook.BaseLyric;
 
 /**
@@ -28,6 +29,6 @@ import com.hchen.superlyric.hook.BaseLyric;
 public class SaltMusic extends BaseLyric {
     @Override
     protected void init() {
-        MeizuHelper.getMeizuNotificationLyric();
+        MeizuHelper.hookNotificationLyric();
     }
 }

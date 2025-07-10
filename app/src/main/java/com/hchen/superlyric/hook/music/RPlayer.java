@@ -23,6 +23,7 @@ import android.content.Context;
 import com.hchen.collect.Collect;
 import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.hook.IHook;
+import com.hchen.superlyric.helper.ScreenHelper;
 import com.hchen.superlyric.hook.BaseLyric;
 
 /**

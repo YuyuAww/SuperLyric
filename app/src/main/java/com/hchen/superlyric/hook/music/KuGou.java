@@ -50,8 +50,8 @@ public class KuGou extends BaseLyric {
     }
 
     @Override
-    protected void onApplication(@NonNull Context context) {
-        super.onApplication(context);
+    protected void onApplicationAfter(@NonNull Context context) {
+        super.onApplicationAfter(context);
         HCData.setClassLoader(context.getClassLoader());
 
         try {
@@ -70,35 +70,40 @@ public class KuGou extends BaseLyric {
     }
 
     private boolean enableStatusBarLyric() {
-        Method[] methodList = DexkitCache.findMemberList("kugou$1", new IDexkitList() {
-            @NonNull
-            @Override
-            public BaseDataList<?> dexkit(@NonNull DexKitBridge bridge) throws ReflectiveOperationException {
-                return bridge.findMethod(FindMethod.create()
-                    .matcher(MethodMatcher.create()
-                        .declaredClass(ClassMatcher.create()
+        try {
+            Method[] methodList = DexkitCache.findMemberList("kugou$1", new IDexkitList() {
+                @NonNull
+                @Override
+                public BaseDataList<?> dexkit(@NonNull DexKitBridge bridge) throws ReflectiveOperationException {
+                    return bridge.findMethod(FindMethod.create()
+                        .matcher(MethodMatcher.create()
+                            .declaredClass(ClassMatcher.create()
+                                .usingStrings("key_status_bar_lyric_open")
+                            )
                             .usingStrings("key_status_bar_lyric_open")
                         )
-                        .usingStrings("key_status_bar_lyric_open")
-                    )
-                );
-            }
-        });
+                    );
+                }
+            });
 
-        Method[] methods = new Method[2];
-        for (Method m : methodList) {
-            if (Objects.equals(m.getReturnType(), boolean.class)) methods[0] = m;
-            else methods[1] = m;
+            Method[] methods = new Method[2];
+            for (Method m : methodList) {
+                if (Objects.equals(m.getReturnType(), boolean.class)) methods[0] = m;
+                else methods[1] = m;
+            }
+
+            hook(methods[0], new IHook() {
+                @Override
+                public void before() {
+                    callThisMethod(methods[1], true);
+                    setResult(true);
+                }
+            });
+            hook(methods[1], setArg(0, true));
+        } catch (Throwable e) {
+            logE(TAG, e);
+            return false;
         }
-
-        hook(methods[0], new IHook() {
-            @Override
-            public void before() {
-                callThisMethod(methods[1], true);
-                setResult(true);
-            }
-        });
-        hook(methods[1], setArg(0, true));
         return true;
     }
 

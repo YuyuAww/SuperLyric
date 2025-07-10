@@ -18,6 +18,7 @@
  */
 package com.hchen.superlyric.state;
 
+import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Context;
 import android.media.MediaMetadata;
@@ -90,6 +91,7 @@ public class PlayStateListener {
         }
 
         @Override
+        @SuppressLint("SwitchIntDef")
         public void onPlaybackStateChanged(@Nullable PlaybackState state) {
             super.onPlaybackStateChanged(state);
             if (state == null) return;

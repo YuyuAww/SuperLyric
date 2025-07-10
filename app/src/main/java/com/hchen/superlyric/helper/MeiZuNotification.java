@@ -22,6 +22,8 @@ import android.app.Notification;
 
 /**
  * 魅族状态栏歌词基本参数
+ *
+ * @author 焕晨HChen
  */
 public class MeiZuNotification extends Notification {
     public static final int FLAG_ALWAYS_SHOW_TICKER = 0x01000000;

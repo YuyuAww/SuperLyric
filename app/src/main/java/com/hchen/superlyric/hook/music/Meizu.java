@@ -19,6 +19,8 @@
 package com.hchen.superlyric.hook.music;
 
 import com.hchen.collect.Collect;
+import com.hchen.superlyric.helper.MeizuHelper;
+import com.hchen.superlyric.helper.QQLiteHelper;
 import com.hchen.superlyric.hook.BaseLyric;
 
 /**
@@ -28,11 +30,11 @@ import com.hchen.superlyric.hook.BaseLyric;
 public class Meizu extends BaseLyric {
     @Override
     protected void init() {
-        if (QQLite.isQQLite())
-            QQLite.init();
+        if (QQLiteHelper.isSupportQQLite())
+            QQLiteHelper.hookLyric();
         else {
-            MeizuHelper.mockDevice();
-            MeizuHelper.getMeizuNotificationLyric();
+            MeizuHelper.depthDeviceMock();
+            MeizuHelper.hookNotificationLyric();
         }
     }
 }

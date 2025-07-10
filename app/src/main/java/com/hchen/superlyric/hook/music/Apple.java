@@ -167,7 +167,7 @@ public class Apple extends BaseLyric {
         Method mediaMetadataCompatStaticMethod = findMethodPro("android.support.v4.media.MediaMetadataCompat")
             .withStatic()
             .single()
-            .get();
+            .obtain();
 
         Field mediaMetadataField = findFieldPro("android.support.v4.media.MediaMetadataCompat")
             .withFieldType(MediaMetadata.class)

@@ -20,6 +20,7 @@ package com.hchen.superlyric.hook.music;
 
 import com.hchen.collect.Collect;
 import com.hchen.hooktool.hook.IHook;
+import com.hchen.superlyric.helper.TimeoutHelper;
 import com.hchen.superlyric.hook.BaseLyric;
 
 /**
@@ -51,7 +52,7 @@ public class MusicFree extends BaseLyric {
                     String lyric = (String) getArg(0);
                     if (lyric.isEmpty()) return;
 
-                    Timeout.start();
+                    TimeoutHelper.start();
                     sendLyric(lyric);
                 }
             }

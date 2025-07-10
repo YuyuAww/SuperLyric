@@ -27,6 +27,7 @@ import com.hchen.dexkitcache.DexkitCache;
 import com.hchen.dexkitcache.IDexkit;
 import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.hook.IHook;
+import com.hchen.superlyric.helper.TimeoutHelper;
 import com.hchen.superlyric.hook.BaseLyric;
 
 import org.luckypray.dexkit.DexKitBridge;
@@ -46,8 +47,8 @@ public class KuWo extends BaseLyric {
     }
 
     @Override
-    protected void onApplication(@NonNull Context context) {
-        super.onApplication(context);
+    protected void onApplicationAfter(@NonNull Context context) {
+        super.onApplicationAfter(context);
         HCData.setClassLoader(context.getClassLoader());
 
         if (existsClass("cn.kuwo.mod.playcontrol.RemoteControlLyricMgr")) {
@@ -59,7 +60,7 @@ public class KuWo extends BaseLyric {
                         String lyric = (String) getArg(0);
                         if (lyric == null || lyric.isEmpty()) return;
 
-                        Timeout.start();
+                        TimeoutHelper.start();
                         sendLyric(lyric);
                     }
                 }
@@ -105,7 +106,7 @@ public class KuWo extends BaseLyric {
                         String lyric = (String) getArg(0);
                         if (lyric == null || lyric.isEmpty()) return;
 
-                        Timeout.start();
+                        TimeoutHelper.start();
                         sendLyric(lyric);
                     }
                 });

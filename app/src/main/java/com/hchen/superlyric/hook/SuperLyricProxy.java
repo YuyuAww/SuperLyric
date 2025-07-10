@@ -60,7 +60,7 @@ public class SuperLyricProxy extends HCBase {
                 .withParamCount(2)
                 .withMethodName("systemReady")
                 .single()
-                .get();
+                .obtain();
         }
 
         if (systemReadyMethod == null) {
