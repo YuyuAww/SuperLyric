@@ -53,6 +53,7 @@ public class MeizuHelper {
                     try {
                         if ("android.app.Notification".equals(getArg(0))) {
                             setResult(MeiZuNotification.class);
+                            return;
                         }
                         Class<?> clazz = (Class<?>) callThisStaticMethod(
                             "forName",
@@ -85,6 +86,7 @@ public class MeizuHelper {
                     try {
                         if ("android.app.Notification".equals(getArg(0))) {
                             setResult(MeiZuNotification.class);
+                            return;
                         }
                         Class<?> clazz = (Class<?>) callThisStaticMethod(
                             "forName",
