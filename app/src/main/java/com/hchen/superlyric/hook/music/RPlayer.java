@@ -24,13 +24,13 @@ import com.hchen.collect.Collect;
 import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.helper.ScreenHelper;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 /**
  * RPlayer
  */
 @Collect(targetPackage = "com.r.rplayer")
-public class RPlayer extends BaseLyric {
+public class RPlayer extends LyricRelease {
     @Override
     protected void init() {
         findMethod("com.stub.StubApp",

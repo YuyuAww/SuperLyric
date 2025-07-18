@@ -24,7 +24,7 @@ import com.hchen.collect.Collect;
 import com.hchen.dexkitcache.DexkitCache;
 import com.hchen.dexkitcache.IDexkit;
 import com.hchen.hooktool.hook.IHook;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 import org.luckypray.dexkit.DexKitBridge;
 import org.luckypray.dexkit.query.FindMethod;
@@ -41,12 +41,12 @@ import java.util.Objects;
  * @author 焕晨HChen
  */
 @Collect(targetPackage = "com.luna.music")
-public class Qishui extends BaseLyric {
+public class Qishui extends LyricRelease {
     private static Object BLUETOOTH;
 
     @Override
     protected void init() {
-        openBluetoothA2dp();
+        fakeBluetoothA2dpEnabled();
         getMediaMetadataCompatLyric();
 
         Class<?> blueToothLyricStatus = findClass("com.luna.biz.playing.lyric.bluetoothlyrics.BlueToothLyricStatus");

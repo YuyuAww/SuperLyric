@@ -29,7 +29,7 @@ import com.hchen.dexkitcache.IDexkit;
 import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.helper.MeizuHelper;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 import org.luckypray.dexkit.DexKitBridge;
 import org.luckypray.dexkit.query.FindClass;
@@ -45,7 +45,7 @@ import java.util.Objects;
  * 网易云音乐
  */
 @Collect(targetPackage = "com.netease.cloudmusic")
-public class Netease extends BaseLyric {
+public class Netease extends LyricRelease {
     @Override
     protected void init() {
         hookTencentTinker();

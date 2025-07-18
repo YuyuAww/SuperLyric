@@ -18,60 +18,68 @@
  */
 package com.hchen.superlyric.hook.music;
 
-import android.content.Context;
-
 import androidx.annotation.NonNull;
 
 import com.hchen.collect.Collect;
 import com.hchen.dexkitcache.DexkitCache;
 import com.hchen.dexkitcache.IDexkit;
-import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.hook.IHook;
-import com.hchen.superlyric.helper.OPPOHelper;
 import com.hchen.superlyric.hook.LyricRelease;
 
 import org.luckypray.dexkit.DexKitBridge;
 import org.luckypray.dexkit.query.FindMethod;
+import org.luckypray.dexkit.query.matchers.ClassMatcher;
 import org.luckypray.dexkit.query.matchers.MethodMatcher;
 import org.luckypray.dexkit.result.base.BaseData;
 
 import java.lang.reflect.Method;
+import java.util.Objects;
 
 /**
- * OPPO 音乐
+ * Symfonium
+ *
+ * @author 焕晨HChen
  */
-@Collect(targetPackage = "com.heytap.music")
-public class HeytapMusic extends LyricRelease {
+@Collect(targetPackage = "app.symfonik.music.player")
+public class Symfonium extends LyricRelease {
+    private String lastLyric;
+
     @Override
     protected void init() {
-    }
-
-    @Override
-    protected void onApplicationAfter(@NonNull Context context) {
-        super.onApplicationAfter(context);
-        HCData.setClassLoader(context.getClassLoader());
-
-        OPPOHelper.mockDevice();
-        getMediaMetadataCompatLyric();
-
-        Method method = DexkitCache.findMember("heytap$1", new IDexkit() {
+        Method method = DexkitCache.findMember("Symfonium$1", new IDexkit() {
             @NonNull
             @Override
             public BaseData dexkit(@NonNull DexKitBridge bridge) throws ReflectiveOperationException {
                 return bridge.findMethod(FindMethod.create()
                     .matcher(MethodMatcher.create()
-                        .declaredClass("com.allsaints.music.player.thirdpart.MediaSessionHelper")
-                        .usingStrings("isCarBluetoothConnected 没有蓝牙连接权限")
+                        .declaredClass(ClassMatcher.create()
+                            .usingStrings("replaygain_track_gain")
+                        )
+                        .usingStrings("replaygain_track_gain")
                     )
-                ).singleOrThrow(() -> new Throwable("Failed to find bluetooth method!!"));
+                ).single();
             }
         });
 
-        hook(method,
+        hookConstructor(method.getReturnType(),
+            Object.class, Object.class,
             new IHook() {
                 @Override
                 public void after() {
-                    setResult(true);
+                    Object arg1 = getArg(0);
+                    Object arg2 = getArg(1);
+                    if (arg1 == null || arg2 == null) return;
+
+                    if (arg1 instanceof Integer && arg2 instanceof String lyric) {
+                        if (Objects.equals(lastLyric, lyric)) return;
+
+                        if (lyric.contains("\n")) {
+                            // 裁剪掉翻译
+                            lyric = lyric.substring(0, lyric.lastIndexOf("\n"));
+                        }
+                        sendLyric(lyric);
+                        lastLyric = lyric;
+                    }
                 }
             }
         );

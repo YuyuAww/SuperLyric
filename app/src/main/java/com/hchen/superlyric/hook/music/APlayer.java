@@ -20,13 +20,13 @@ package com.hchen.superlyric.hook.music;
 
 import com.hchen.collect.Collect;
 import com.hchen.superlyric.helper.MeizuHelper;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 /**
  * APlayer
  */
 @Collect(targetPackage = "remix.myplayer")
-public class APlayer extends BaseLyric {
+public class APlayer extends LyricRelease {
     @Override
     protected void init() {
         MeizuHelper.depthDeviceMock();

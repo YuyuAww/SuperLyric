@@ -20,13 +20,13 @@ package com.hchen.superlyric.hook.music;
 
 import com.hchen.collect.Collect;
 import com.hchen.superlyric.helper.MeizuHelper;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 /**
  * Gramophone [留声机]
  */
 @Collect(targetPackage = "org.akanework.gramophone")
-public class Gramophone extends BaseLyric {
+public class Gramophone extends LyricRelease {
     @Override
     protected void init() {
         MeizuHelper.hookNotificationLyric();

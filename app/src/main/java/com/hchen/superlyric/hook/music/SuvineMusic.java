@@ -20,13 +20,13 @@ package com.hchen.superlyric.hook.music;
 
 import com.hchen.collect.Collect;
 import com.hchen.superlyric.helper.MeizuHelper;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 /**
  * 糖醋音乐
  */
 @Collect(targetPackage = "com.xuncorp.suvine.music")
-public class SuvineMusic extends BaseLyric {
+public class SuvineMusic extends LyricRelease {
     @Override
     protected void init() {
         MeizuHelper.hookNotificationLyric();

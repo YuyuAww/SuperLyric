@@ -19,13 +19,13 @@
 package com.hchen.superlyric.hook.music;
 
 import com.hchen.collect.Collect;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 /**
  * Kde
  */
 @Collect(targetPackage = "org.kde.kdeconnect_tp")
-public class Kde extends BaseLyric {
+public class Kde extends LyricRelease {
     @Override
     protected void init() {
         getMediaMetadataCompatLyric();

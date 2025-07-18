@@ -20,13 +20,13 @@ package com.hchen.superlyric.hook.music;
 
 import com.hchen.collect.Collect;
 import com.hchen.superlyric.helper.QQLiteHelper;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 /**
  * 小米音乐
  */
 @Collect(targetPackage = "com.miui.player")
-public class MiPlayer extends BaseLyric {
+public class MiPlayer extends LyricRelease {
     @Override
     protected void init() {
         QQLiteHelper.hookLyric();

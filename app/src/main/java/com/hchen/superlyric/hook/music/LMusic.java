@@ -20,13 +20,13 @@ package com.hchen.superlyric.hook.music;
 
 import com.hchen.collect.Collect;
 import com.hchen.superlyric.helper.MeizuHelper;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 /**
  * LMusic
  */
 @Collect(targetPackage = "com.lalilu.lmusic")
-public class LMusic extends BaseLyric {
+public class LMusic extends LyricRelease {
     @Override
     protected void init() {
         MeizuHelper.depthDeviceMock();

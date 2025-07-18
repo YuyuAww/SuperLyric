@@ -28,7 +28,7 @@ import com.hchen.dexkitcache.IDexkit;
 import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.helper.OPPOHelper;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 import org.luckypray.dexkit.DexKitBridge;
 import org.luckypray.dexkit.query.FindMethod;
@@ -41,7 +41,7 @@ import java.lang.reflect.Method;
  * OPPO 音乐
  */
 @Collect(targetPackage = "com.oppo.music")
-public class OPPOMusic extends BaseLyric {
+public class OPPOMusic extends LyricRelease {
     @Override
     protected void init() {
     }

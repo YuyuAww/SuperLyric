@@ -21,7 +21,7 @@ package com.hchen.superlyric.hook.music;
 import android.os.Parcel;
 
 import com.hchen.hooktool.hook.IHook;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 import com.hchen.superlyricapi.SuperLyricData;
 
 /**
@@ -29,7 +29,7 @@ import com.hchen.superlyricapi.SuperLyricData;
  *
  * @author 焕晨HChen
  */
-public class Api extends BaseLyric {
+public class Api extends LyricRelease {
     @Override
     protected boolean isEnabled() {
         return existsClass("com.hchen.superlyricapi.SuperLyricTool");

@@ -22,7 +22,7 @@ import com.hchen.collect.Collect;
 import com.hchen.hooktool.exception.NonSingletonException;
 import com.hchen.hooktool.helper.Any;
 import com.hchen.hooktool.hook.IHook;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
  * Poweramp
  */
 @Collect(targetPackage = "com.maxmpz.audioplayer")
-public class Poweramp extends BaseLyric {
+public class Poweramp extends LyricRelease {
     @Override
     protected void init() {
         findMethodPro("com.maxmpz.widget.player.list.LyricsFastTextView")

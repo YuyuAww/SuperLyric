@@ -18,6 +18,10 @@
  */
 package com.hchen.superlyric.binder;
 
+import static com.hchen.superlyric.data.SuperLyricKey.SUPER_LYRIC_CONTROLLER_REGISTER;
+import static com.hchen.superlyric.data.SuperLyricKey.SUPER_LYRIC_CONTROLLER_REGISTER_OLD;
+import static com.hchen.superlyric.data.SuperLyricKey.getString;
+
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -29,6 +33,7 @@ import android.os.RemoteException;
 import androidx.annotation.NonNull;
 
 import com.hchen.hooktool.log.AndroidLog;
+import com.hchen.superlyric.data.SuperLyricKey;
 import com.hchen.superlyricapi.ISuperLyric;
 import com.hchen.superlyricapi.SuperLyricData;
 
@@ -45,7 +50,7 @@ public class SuperLyricControllerService {
     private static SuperLyricService mSuperLyricService;
     public static final CopyOnWriteArraySet<String> mFinalExemptSet = new CopyOnWriteArraySet<>();
     private static final Messenger mMessengerService = new Messenger(new ControllerHandler(Looper.getMainLooper()));
-    private static final ConcurrentHashMap<String, ISuperLyric.Stub> mPackageName2ISuperLyricStubMap = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, ISuperLyric.Stub> mRegisteredControllerMap = new ConcurrentHashMap<>();
 
     public SuperLyricControllerService(SuperLyricService superLyricService) {
         mSuperLyricService = superLyricService;
@@ -63,22 +68,22 @@ public class SuperLyricControllerService {
             Messenger client = msg.replyTo;
             if (obj == null || client == null) return;
 
-            String packageName = obj.getString("super_lyric_controller_package");
+            String packageName = getString(obj, SUPER_LYRIC_CONTROLLER_REGISTER, SUPER_LYRIC_CONTROLLER_REGISTER_OLD);
             if (packageName == null || packageName.isEmpty()) return;
             if (!mFinalExemptSet.contains(packageName)) return;
 
             ISuperLyric.Stub superLyric = null;
-            if (mPackageName2ISuperLyricStubMap.containsKey(packageName)) {
+            if (mRegisteredControllerMap.containsKey(packageName)) {
                 try {
-                    superLyric = mPackageName2ISuperLyricStubMap.get(packageName);
+                    superLyric = mRegisteredControllerMap.get(packageName);
                     if (superLyric == null)
-                        mPackageName2ISuperLyricStubMap.remove(packageName);
+                        mRegisteredControllerMap.remove(packageName);
                     else if (!superLyric.isBinderAlive()) {
-                        mPackageName2ISuperLyricStubMap.remove(packageName);
+                        mRegisteredControllerMap.remove(packageName);
                         superLyric = null;
                     }
                 } catch (Throwable ignore) {
-                    mPackageName2ISuperLyricStubMap.remove(packageName);
+                    mRegisteredControllerMap.remove(packageName);
                     superLyric = null;
                 }
             }
@@ -86,17 +91,17 @@ public class SuperLyricControllerService {
             try {
                 if (superLyric == null) {
                     superLyric = createSuperLyricStub();
-                    mPackageName2ISuperLyricStubMap.put(packageName, superLyric);
+                    mRegisteredControllerMap.put(packageName, superLyric);
                 }
                 Message message = Message.obtain();
                 Bundle bundle = new Bundle();
-                bundle.putBinder("reply", superLyric);
+                bundle.putBinder(SuperLyricKey.REPLY, superLyric);
                 message.setData(bundle);
                 client.send(message);
 
-                AndroidLog.logD(TAG, "Callback client: " + client + ", controller: " + superLyric + ", packageName: " + packageName);
+                AndroidLog.logD(TAG, "Callback client: " + client + ", controller: " + superLyric + ", package: " + packageName);
             } catch (RemoteException e) {
-                AndroidLog.logE(TAG, "Failed to send binder message!!", e);
+                AndroidLog.logE(TAG, "Failed to handle message!!", e);
             }
         }
     }
@@ -105,7 +110,7 @@ public class SuperLyricControllerService {
         return new ISuperLyric.Stub() {
             @Override
             public void onSuperLyric(SuperLyricData superLyricData) throws RemoteException {
-                if (!mPackageName2ISuperLyricStubMap.containsValue(this)) return;
+                if (!mRegisteredControllerMap.containsValue(this)) return;
 
                 try {
                     mSuperLyricService.onSuperLyric(superLyricData);
@@ -116,7 +121,7 @@ public class SuperLyricControllerService {
 
             @Override
             public void onStop(SuperLyricData superLyricData) throws RemoteException {
-                if (!mPackageName2ISuperLyricStubMap.containsValue(this)) return;
+                if (!mRegisteredControllerMap.containsValue(this)) return;
 
                 try {
                     mSuperLyricService.onStop(superLyricData);
@@ -127,8 +132,9 @@ public class SuperLyricControllerService {
         };
     }
 
+    @Deprecated
     public void removeSuperLyricStubIfNeed(@NonNull String packageName) {
-        mPackageName2ISuperLyricStubMap.remove(packageName);
+        mRegisteredControllerMap.remove(packageName);
     }
 
     @NonNull

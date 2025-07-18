@@ -33,7 +33,7 @@ import com.hchen.collect.Collect;
 import com.hchen.dexkitcache.DexkitCache;
 import com.hchen.dexkitcache.IDexkit;
 import com.hchen.hooktool.hook.IHook;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 import org.luckypray.dexkit.DexKitBridge;
 import org.luckypray.dexkit.query.FindClass;
@@ -49,7 +49,7 @@ import java.util.LinkedList;
  * Apple Music
  */
 @Collect(targetPackage = "com.apple.android.music")
-public class Apple extends BaseLyric {
+public class Apple extends LyricRelease {
     private Object currentSongInfo;
     private LyricsLinePtrHelper lyricsLinePtrHelper;
     private PlaybackState playbackState;

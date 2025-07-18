@@ -25,7 +25,7 @@ import android.view.ViewGroup;
 import com.hchen.collect.Collect;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.helper.ScreenHelper;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -35,7 +35,7 @@ import java.util.ArrayList;
  * LX Music
  */
 @Collect(targetPackage = "cn.toside.music.mobile")
-public class LXMusic extends BaseLyric {
+public class LXMusic extends LyricRelease {
     @Override
     protected void init() {
         // 所需 setCurrentLyric 类是混淆的，从 LyricModule 类逆向获取

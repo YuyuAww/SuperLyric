@@ -21,8 +21,8 @@ package com.hchen.superlyric.helper;
 import static com.hchen.hooktool.core.CoreTool.existsClass;
 import static com.hchen.hooktool.core.CoreTool.hookMethod;
 import static com.hchen.hooktool.core.CoreTool.setStaticField;
-import static com.hchen.superlyric.hook.BaseLyric.sendLyric;
-import static com.hchen.superlyric.hook.BaseLyric.sendStop;
+import static com.hchen.superlyric.hook.LyricRelease.sendLyric;
+import static com.hchen.superlyric.hook.LyricRelease.sendStop;
 
 import android.app.Notification;
 import android.app.Service;

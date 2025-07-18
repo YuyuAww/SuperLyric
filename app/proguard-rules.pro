@@ -25,12 +25,12 @@
 -keep class com.hchen.superlyric.hook.**
 -keep class com.hchen.superlyric.hook.**$*
 -keep class  com.hchen.hooktool.HCState {
-        static boolean isXposedEnabled;
-        static java.lang.String framework;
-        static int version;
- }
+    static boolean isXposedEnabled;
+    static java.lang.String framework;
+    static int version;
+}
 -keep class * implements android.os.Parcelable {
-        public static ** CREATOR;
+    public static ** CREATOR;
 }
 -keep class com.hchen.superlyricapi.* {*;}
 -keep class com.hchen.dexkitcache.DexkitCache$MemberData {*;}

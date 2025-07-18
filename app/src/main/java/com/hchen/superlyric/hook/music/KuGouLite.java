@@ -28,7 +28,7 @@ import com.hchen.dexkitcache.DexkitCache;
 import com.hchen.dexkitcache.IDexkitList;
 import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.hook.IHook;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 import org.luckypray.dexkit.DexKitBridge;
 import org.luckypray.dexkit.query.FindMethod;
@@ -43,7 +43,7 @@ import java.util.Objects;
  * 酷狗音乐概念版
  */
 @Collect(targetPackage = "com.kugou.android.lite")
-public class KuGouLite extends BaseLyric {
+public class KuGouLite extends LyricRelease {
 
     @Override
     protected void init() {

@@ -29,7 +29,7 @@ import com.hchen.collect.Collect;
 import com.hchen.dexkitcache.DexkitCache;
 import com.hchen.dexkitcache.IDexkit;
 import com.hchen.hooktool.hook.IHook;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 import org.luckypray.dexkit.DexKitBridge;
 import org.luckypray.dexkit.query.FindClass;
@@ -52,7 +52,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author 焕晨HChen
  */
 @Collect(targetPackage = "com.tencent.qqmusic")
-public class QQMusic extends BaseLyric {
+public class QQMusic extends LyricRelease {
     private final CopyOnWriteArrayList<LyricData> lyricDataList = new CopyOnWriteArrayList<>();
     private Field lyricField;
     private Field durationField;

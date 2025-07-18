@@ -28,7 +28,7 @@ import com.hchen.dexkitcache.IDexkit;
 import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.helper.TimeoutHelper;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 import org.luckypray.dexkit.DexKitBridge;
 import org.luckypray.dexkit.query.FindClass;
@@ -41,7 +41,7 @@ import java.util.Objects;
  * 酷我音乐
  */
 @Collect(targetPackage = "cn.kuwo.player")
-public class KuWo extends BaseLyric {
+public class KuWo extends LyricRelease {
     @Override
     protected void init() {
     }
@@ -83,7 +83,7 @@ public class KuWo extends BaseLyric {
                     }
                 });
 
-            openBluetoothA2dp();
+            fakeBluetoothA2dpEnabled();
 
             Class<?> clazz = DexkitCache.findMember("kuwo$1", new IDexkit() {
                 @NonNull

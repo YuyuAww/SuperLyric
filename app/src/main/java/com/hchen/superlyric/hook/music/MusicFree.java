@@ -21,13 +21,13 @@ package com.hchen.superlyric.hook.music;
 import com.hchen.collect.Collect;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.helper.TimeoutHelper;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 /**
  * MusicFree
  */
 @Collect(targetPackage = "fun.upup.musicfree")
-public class MusicFree extends BaseLyric {
+public class MusicFree extends LyricRelease {
     @Override
     protected void init() {
         hookMethod("fun.upup.musicfree.lyricUtil.LyricUtilModule",

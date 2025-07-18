@@ -20,13 +20,13 @@ package com.hchen.superlyric.hook.music;
 
 import com.hchen.collect.Collect;
 import com.hchen.superlyric.helper.MeizuHelper;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 /**
  * Mimicry
  */
 @Collect(targetPackage = "com.mimicry.mymusic")
-public class Mimicry extends BaseLyric {
+public class Mimicry extends LyricRelease {
     @Override
     protected void init() {
         MeizuHelper.hookNotificationLyric();

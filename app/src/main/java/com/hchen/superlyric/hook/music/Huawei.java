@@ -20,7 +20,7 @@ package com.hchen.superlyric.hook.music;
 
 import com.hchen.collect.Collect;
 import com.hchen.hooktool.hook.IHook;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 import java.util.Arrays;
 
@@ -28,7 +28,7 @@ import java.util.Arrays;
  * 华为音乐
  */
 @Collect(targetPackage = "com.huawei.music")
-public class Huawei extends BaseLyric {
+public class Huawei extends LyricRelease {
     @Override
     protected void init() {
         hookAllMethod("com.android.mediacenter.localmusic.VehicleLyricControl",

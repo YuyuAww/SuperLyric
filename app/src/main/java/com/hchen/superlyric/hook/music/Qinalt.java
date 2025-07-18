@@ -24,13 +24,13 @@ import com.hchen.collect.Collect;
 import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.hook.IHook;
 import com.hchen.superlyric.helper.MeizuHelper;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 /**
  * 青盐音乐
  */
 @Collect(targetPackage = "com.xuncorp.qinalt.music")
-public class Qinalt extends BaseLyric {
+public class Qinalt extends LyricRelease {
     @Override
     protected void init() {
         findMethod("com.stub.StubApp",

@@ -28,11 +28,8 @@ import com.hchen.superlyricapi.ISuperLyric;
 import com.hchen.superlyricapi.ISuperLyricDistributor;
 import com.hchen.superlyricapi.SuperLyricData;
 
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.function.Predicate;
 
 /**
  * Super Lyric 服务
@@ -41,38 +38,25 @@ import java.util.function.Predicate;
  */
 public class SuperLyricService extends ISuperLyricDistributor.Stub {
     private static final String TAG = "SuperLyricService";
-    private static final CopyOnWriteArrayList<ISuperLyric> mISuperLyricList = new CopyOnWriteArrayList<>();
-    private final static ConcurrentHashMap<IBinder, ISuperLyric> mIBinder2ISuperLyricMap = new ConcurrentHashMap<>();
+    private final static ConcurrentHashMap<IBinder, ISuperLyric> mRegisteredBinderMap = new ConcurrentHashMap<>();
     public static final CopyOnWriteArraySet<String> mExemptSet = new CopyOnWriteArraySet<>();
     public static final CopyOnWriteArraySet<String> mSelfControlSet = new CopyOnWriteArraySet<>();
 
-    public void addSuperLyricBinder(@NonNull IBinder iBinder, @NonNull ISuperLyric iSuperLyric) {
+    public void registerSuperLyricBinder(@NonNull IBinder iBinder, @NonNull ISuperLyric iSuperLyric) {
         try {
-            if (mIBinder2ISuperLyricMap.get(iBinder) == null) {
-                mISuperLyricList.add(iSuperLyric);
-                mIBinder2ISuperLyricMap.put(iBinder, iSuperLyric);
-            }
+            mRegisteredBinderMap.putIfAbsent(iBinder, iSuperLyric);
         } catch (Throwable e) {
-            AndroidLog.logE(TAG, "[addSuperLyricBinder]: Failed to add binder: " + iSuperLyric, e);
+            AndroidLog.logE(TAG, "[registerSuperLyricBinder]: Failed to add binder: " + iSuperLyric, e);
         }
     }
 
-    public void removeSuperLyricBinder(@NonNull IBinder iBinder) {
+    public void unregisterSuperLyricBinder(@NonNull IBinder iBinder) {
         try {
-            if (mIBinder2ISuperLyricMap.get(iBinder) != null) {
-                ISuperLyric iSuperLyric = mIBinder2ISuperLyricMap.get(iBinder);
-                if (iSuperLyric == null) return;
-
-                mISuperLyricList.removeIf(new Predicate<ISuperLyric>() {
-                    @Override
-                    public boolean test(ISuperLyric sl) {
-                        return Objects.equals(sl, iSuperLyric);
-                    }
-                });
-                mIBinder2ISuperLyricMap.remove(iBinder);
+            if (mRegisteredBinderMap.get(iBinder) != null) {
+                mRegisteredBinderMap.remove(iBinder);
             }
         } catch (Throwable e) {
-            AndroidLog.logE(TAG, "[removeSuperLyricBinder]: Failed to remove binder: " + iBinder, e);
+            AndroidLog.logE(TAG, "[unregisterSuperLyricBinder]: Failed to remove binder: " + iBinder, e);
         }
     }
 
@@ -88,32 +72,30 @@ public class SuperLyricService extends ISuperLyricDistributor.Stub {
 
     @Override
     public void onSuperLyric(SuperLyricData data) throws RemoteException {
-        for (ISuperLyric superLyric : mISuperLyricList) {
+        mRegisteredBinderMap.entrySet().removeIf(entry -> {
+            ISuperLyric iSuperLyric = entry.getValue();
             try {
-                superLyric.onSuperLyric(data);
+                iSuperLyric.onSuperLyric(data);
+                return false;
             } catch (Throwable e) {
-                try {
-                    mISuperLyricList.remove(superLyric);
-                } catch (Throwable ignore) {
-                }
-                AndroidLog.logE(TAG, "[onSuperLyric]: Will remove binder: " + superLyric, e);
+                AndroidLog.logE(TAG, "[onSuperLyric]: Binder died!! remove binder: " + iSuperLyric, e);
+                return true;
             }
-        }
+        });
     }
 
     @Override
     public void onStop(SuperLyricData data) throws RemoteException {
-        for (ISuperLyric superLyric : mISuperLyricList) {
+        mRegisteredBinderMap.entrySet().removeIf(entry -> {
+            ISuperLyric iSuperLyric = entry.getValue();
             try {
-                superLyric.onStop(data);
+                iSuperLyric.onStop(data);
+                return false;
             } catch (Throwable e) {
-                try {
-                    mISuperLyricList.remove(superLyric);
-                } catch (Throwable ignore) {
-                }
-                AndroidLog.logE(TAG, "[onStop]: Will remove binder: " + superLyric, e);
+                AndroidLog.logE(TAG, "[onStop]: Binder died!! remove binder: " + iSuperLyric, e);
+                return true;
             }
-        }
+        });
     }
 
     public void addExemptPackage(String packageName) {
@@ -125,7 +107,7 @@ public class SuperLyricService extends ISuperLyricDistributor.Stub {
         }
     }
 
-    public void onDied(String packageName) {
+    public void onPackageDied(String packageName) {
         if (packageName == null || packageName.isEmpty()) return;
 
         try {
@@ -133,7 +115,7 @@ public class SuperLyricService extends ISuperLyricDistributor.Stub {
             mSelfControlSet.remove(packageName); // 移除自我控制
             onStop(new SuperLyricData().setPackageName(packageName));
         } catch (Throwable e) {
-            AndroidLog.logE(TAG, "App :" + packageName + " is died!", e);
+            AndroidLog.logE(TAG, "Package is died: " + packageName, e);
         }
     }
 }

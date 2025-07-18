@@ -21,13 +21,13 @@ package com.hchen.superlyric.hook.music;
 import com.hchen.collect.Collect;
 import com.hchen.superlyric.helper.MeizuHelper;
 import com.hchen.superlyric.helper.QQLiteHelper;
-import com.hchen.superlyric.hook.BaseLyric;
+import com.hchen.superlyric.hook.LyricRelease;
 
 /**
  * 魅族音乐
  */
 @Collect(targetPackage = "com.meizu.media.music")
-public class Meizu extends BaseLyric {
+public class Meizu extends LyricRelease {
     @Override
     protected void init() {
         if (QQLiteHelper.isSupportQQLite())

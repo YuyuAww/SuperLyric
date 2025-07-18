@@ -18,8 +18,8 @@
  */
 package com.hchen.superlyric.helper;
 
-import static com.hchen.superlyric.hook.BaseLyric.audioManager;
-import static com.hchen.superlyric.hook.BaseLyric.sendStop;
+import static com.hchen.superlyric.hook.LyricRelease.audioManager;
+import static com.hchen.superlyric.hook.LyricRelease.sendStop;
 
 import java.util.Timer;
 import java.util.TimerTask;

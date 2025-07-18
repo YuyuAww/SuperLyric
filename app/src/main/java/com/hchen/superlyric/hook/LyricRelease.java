@@ -34,17 +34,18 @@ import androidx.annotation.NonNull;
 import com.hchen.hooktool.HCBase;
 import com.hchen.hooktool.HCData;
 import com.hchen.hooktool.hook.IHook;
+import com.hchen.superlyric.data.SuperLyricKey;
 import com.hchen.superlyricapi.ISuperLyricDistributor;
 import com.hchen.superlyricapi.SuperLyricData;
 
 import java.util.Objects;
 
 /**
- * Super Lyric 基类
+ * 歌词发布类
  *
  * @author 焕晨HChen
  */
-public abstract class BaseLyric extends HCBase {
+public abstract class LyricRelease extends HCBase {
     private static ISuperLyricDistributor iSuperLyricDistributor;
     public static AudioManager audioManager;
     public static String packageName;
@@ -57,27 +58,28 @@ public abstract class BaseLyric extends HCBase {
         packageName = context.getPackageName();
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 
-        Intent intent = new Intent("Super_Lyric");
-        intent.putExtra("super_lyric_add_package", packageName);
+        Intent intent = new Intent(SuperLyricKey.SUPER_LYRIC);
+        intent.putExtra(SuperLyricKey.SUPER_LYRIC_EXEMPT_PACKAGE, packageName);
         context.sendBroadcast(intent);
 
         Intent intentBinder = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-        Objects.requireNonNull(intentBinder, "Failed to get designated binder intent, can't use SuperLyric!!");
+        Objects.requireNonNull(intentBinder, "Failed to obtain designated binder intent, can't use SuperLyric!!");
 
-        Bundle bundle = intentBinder.getBundleExtra("super_lyric_info");
-        Objects.requireNonNull(bundle, "Failed to get designated binder bundle, please try reboot system!!");
+        Bundle bundle = intentBinder.getBundleExtra(SuperLyricKey.SUPER_LYRIC_INFO);
+        Objects.requireNonNull(bundle, "Failed to obtain designated binder bundle, please try to reboot system!!");
 
-        iSuperLyricDistributor = ISuperLyricDistributor.Stub.asInterface(bundle.getBinder("super_lyric_binder"));
+        iSuperLyricDistributor = ISuperLyricDistributor.Stub.asInterface(bundle.getBinder(SuperLyricKey.SUPER_LYRIC_BINDER));
 
         try {
             PackageInfo packageInfo = context.getPackageManager().getPackageInfo(packageName, 0);
             versionName = packageInfo.versionName;
             versionCode = packageInfo.getLongVersionCode();
-            logI(TAG, "App packageName: " + packageName + ", versionName: " + versionName + ", versionCode: " + versionCode);
-        } catch (PackageManager.NameNotFoundException ignore) {
+            logI(TAG, "App package: " + packageName + ", version: " + versionName + ", code: " + versionCode);
+        } catch (PackageManager.NameNotFoundException e) {
+            logW(TAG, "Failed to obtain package info!!", e);
         }
 
-        logD(TAG, "Success to get binder: " + iSuperLyricDistributor + ", caller package name: " + packageName);
+        logD(TAG, "Success to obtain binder: " + iSuperLyricDistributor + ", caller package: " + packageName);
     }
 
     /**
@@ -104,7 +106,7 @@ public abstract class BaseLyric extends HCBase {
     /**
      * 模拟蓝牙为开启状态
      */
-    public static void openBluetoothA2dp() {
+    public static void fakeBluetoothA2dpEnabled() {
         hookMethod("android.media.AudioManager",
             "isBluetoothA2dpOn",
             returnResult(true)
@@ -170,10 +172,11 @@ public abstract class BaseLyric extends HCBase {
                     .setDelay(delay)
             );
         } catch (RemoteException e) {
-            logE("BaseLyric", "sendLyric: ", e);
+            logE("LyricRelease", "Failed to send lyric!!", e);
+            return;
         }
 
-        logD("BaseLyric", delay != 0 ? "Send lyric: " + lyric + ", delay: " + delay : "Send lyric: " + lyric);
+        logD("LyricRelease", delay != 0 ? "Send lyric: " + lyric + ", delay: " + delay : "Send lyric: " + lyric);
     }
 
     /**
@@ -188,7 +191,7 @@ public abstract class BaseLyric extends HCBase {
      *
      * @param packageName 暂停播放的音乐软件包名
      */
-    public static void sendStop(String packageName) {
+    public static void sendStop(@NonNull String packageName) {
         sendStop(
             new SuperLyricData()
                 .setPackageName(packageName)
@@ -206,10 +209,11 @@ public abstract class BaseLyric extends HCBase {
         try {
             iSuperLyricDistributor.onStop(data);
         } catch (RemoteException e) {
-            logE("BaseLyric", "sendStop: " + e);
+            logE("LyricRelease", "Failed to send stop!!", e);
+            return;
         }
 
-        logD("BaseLyric", "Stop lyric: " + data);
+        logD("LyricRelease", "Stop lyric: " + data);
     }
 
     /**
@@ -223,9 +227,10 @@ public abstract class BaseLyric extends HCBase {
         try {
             iSuperLyricDistributor.onSuperLyric(data);
         } catch (RemoteException e) {
-            logE("BaseLyric", "sendSuperLyricData: " + e);
+            logE("LyricRelease", "Failed to send data!!", e);
+            return;
         }
 
-        logD("BaseLyric", "Send data: " + data);
+        logD("LyricRelease", "Send data: " + data);
     }
 }

@@ -56,7 +56,7 @@ public class InitHook extends HCEntrance {
             .setLogLevel(BuildConfig.DEBUG ? LOG_D : LOG_I)
             .setModulePackageName(BuildConfig.APPLICATION_ID)
             .setLogExpandPath("com.hchen.superlyric.hook")
-            .setLogExpandIgnoreClassNames("BaseLyric");
+            .setLogExpandIgnoreClassNames("LyricRelease");
     }
 
     @NonNull

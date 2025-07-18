@@ -31,5 +31,6 @@
         <item>com.r.rplayer</item>
         <item>com.heytap.music</item>
         <item>com.oppo.music</item>
+        <item>app.symfonik.music.player</item>
     </string-array>
 </resources>
